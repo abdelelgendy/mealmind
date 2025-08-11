@@ -173,3 +173,70 @@ input:focus, select:focus { border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(14
 
 .filters { display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:.75rem; margin-bottom:1rem; }
 .filters label { display:flex; flex-direction:column; gap:.25rem; }
+
+/* ----- Plan page ----- */
+.plan-header {
+  display:flex; align-items:center; justify-content:space-between;
+}
+.plan-actions { display:flex; gap:.5rem; }
+
+.plan-grid {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: 120px repeat(7, 1fr);
+  grid-auto-rows: minmax(86px, auto);
+  gap: 8px;
+}
+
+.plan-corner { /* empty top-left cell */ }
+.plan-day, .plan-slot {
+  background: #eef1f6;
+  color: #0f172a;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display:flex; align-items:center; justify-content:center;
+  font-weight:600;
+}
+
+.plan-day { height: 44px; }
+.plan-slot { height: 86px; position: sticky; left: 0; } /* for horizontal scroll later if needed */
+
+.plan-cell {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: .6rem .7rem;
+  display:flex;
+}
+
+.cell-empty {
+  width:100%; height:100%;
+  background: transparent; border: 2px dashed #d7dbe5;
+  color: #6b7280;
+  border-radius: 10px; cursor: pointer;
+}
+.cell-empty:hover { background: #f5f7fb; }
+
+.cell-filled {
+  display:flex; flex-direction:column; gap:.4rem; width:100%;
+}
+.cell-filled .title { font-weight:600; }
+.cell-actions { display:flex; gap:.5rem; }
+
+.plan-editor {
+  margin-top: 1rem;
+}
+.editor-card {
+  padding: .9rem;
+  display:grid; gap:.6rem;
+}
+.editor-card input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: .6rem .75rem;
+}
+.editor-actions { display:flex; gap:.5rem; }
+
+.small { font-size: .85rem; }

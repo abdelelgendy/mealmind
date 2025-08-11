@@ -5,8 +5,6 @@ import Pantry from "./pages/Pantry.jsx";
 import Plan from "./pages/Plan.jsx";
 import Preferences from "./pages/Preferences.jsx";
 import Search from "./pages/Search.jsx";
-import Plan from "./pages/Plan.jsx";
-import Preferences from "./pages/Preferences.jsx";
 
 export default function App() {
   return (

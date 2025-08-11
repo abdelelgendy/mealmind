@@ -27,3 +27,18 @@ export function loadPrefs() {
 export function savePrefs(prefs) {
   localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
 }
+
+const PLAN_KEY = 'mealmind_plan_v1';
+
+export function loadPlan() {
+  try {
+    const raw = localStorage.getItem(PLAN_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function savePlan(plan) {
+  localStorage.setItem(PLAN_KEY, JSON.stringify(plan));
+}
