@@ -189,6 +189,7 @@ input:focus, select:focus { border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(14
 }
 
 .plan-corner { /* empty top-left cell */ }
+
 .plan-day, .plan-slot {
   background: #eef1f6;
   color: #0f172a;
@@ -240,3 +241,18 @@ input:focus, select:focus { border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(14
 .editor-actions { display:flex; gap:.5rem; }
 
 .small { font-size: .85rem; }
+
+/* Modal */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,.4);
+  display: grid; place-items: center; z-index: 50;
+}
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1rem;
+  width: min(520px, 92vw);
+}
+.modal .row { display:flex; gap:.5rem; }
