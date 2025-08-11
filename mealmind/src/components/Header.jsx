@@ -26,6 +26,7 @@ export default function Header() {
         <NavLink to="/" end>Home</NavLink>
         <NavLink to="/pantry">Pantry</NavLink>
         <NavLink to="/plan">Meal Plan</NavLink>
+        <NavLink to="/search">Search</NavLink>
         <NavLink to="/profile">Profile</NavLink>
       </nav>
     </header>
