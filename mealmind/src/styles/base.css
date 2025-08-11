@@ -1,0 +1,44 @@
+/* Header layout */
+.header {
+  position: sticky; top: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: #21222A; color: #fff;
+  z-index: 10;
+}
+.logo { font-weight: 700; letter-spacing: .2px; }
+
+/* Hamburger button */
+.hamburger {
+  display: inline-flex; flex-direction: column; gap: 4px;
+  width: 36px; height: 32px; justify-content: center; align-items: center;
+  background: transparent; border: 0; cursor: pointer;
+}
+.hamburger span {
+  display: block; width: 22px; height: 2px; background: #fff; border-radius: 2px;
+}
+
+/* Nav (mobile first: hidden until opened) */
+.nav {
+  position: absolute; left: 0; right: 0; top: 56px;
+  background: #21222A; border-top: 1px solid #3b3c44;
+  display: none; flex-direction: column; padding: .5rem;
+}
+.nav.is-open { display: flex; }
+.nav a {
+  color: #fff; text-decoration: none; padding: .6rem .75rem; border-radius: .4rem;
+}
+.nav a:hover { background: #3b3c44; }
+
+/* Desktop ≥ 768px */
+@media (min-width: 768px) {
+  .hamburger { display: none; }
+  .nav {
+    position: static; display: flex !important;
+    flex-direction: row; gap: 1rem; padding: 0;
+    background: transparent; border: 0;
+  }
+  .nav a:hover { background: rgba(255,255,255,.12); }
+}
+
+.nav a:focus { outline: 2px solid #61dafb; outline-offset: 2px; }
