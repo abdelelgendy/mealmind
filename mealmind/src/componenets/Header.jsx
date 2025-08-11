@@ -1,7 +1,5 @@
-import "../styles/Header.css";
-//Nav bar for application 
-
 import { useState } from "react";
+import { NavLink } from "react-router-dom";
 
 export default function Header() {
   const [open, setOpen] = useState(false);
@@ -10,7 +8,6 @@ export default function Header() {
     <header className="header">
       <div className="logo">MealMind</div>
 
-      {/* Hamburger (mobile) */}
       <button
         className="hamburger"
         aria-label="Toggle menu"
@@ -18,17 +15,18 @@ export default function Header() {
         aria-controls="site-menu"
         onClick={() => setOpen(o => !o)}
       >
-        <span />
-        <span />
-        <span />
+        <span /><span /><span />
       </button>
 
-      {/* Nav */}
-      <nav id="site-menu" className={`nav ${open ? "is-open" : ""}`}onClick={()=> setOpen(false)}>
-        <a href="#">Home</a>
-        <a href="#">Pantry</a>
-        <a href="#">Meal Plan</a>
-        <a href="#">Profile</a>
+      <nav
+        id="site-menu"
+        className={`nav ${open ? "is-open" : ""}`}
+        onClick={() => setOpen(false)}  // close after clicking a link
+      >
+        <NavLink to="/" end>Home</NavLink>
+        <NavLink to="/pantry">Pantry</NavLink>
+        <NavLink to="/plan">Meal Plan</NavLink>
+        <NavLink to="/profile">Profile</NavLink>
       </nav>
     </header>
   );
