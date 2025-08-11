@@ -144,3 +144,20 @@ input:focus, select:focus { border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(14
   .pantry-form input:nth-child(3) { grid-column: span 2; }
   .pantry-form .btn { grid-column: span 1; }
 }
+
+/* Preferences form */
+.prefs-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.field { display: grid; gap: .4rem; }
+.field span { font-size: .9rem; color: var(--muted); }
+.field-wide { grid-column: 1 / -1; }
+.actions { grid-column: 1 / -1; display: flex; gap: .75rem; align-items: center; }
