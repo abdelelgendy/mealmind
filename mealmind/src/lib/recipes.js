@@ -1,0 +1,70 @@
+const API = 'https://api.spoonacular.com';
+
+const KEY = import.meta.env.VITE_SPOONACULAR_KEY;
+
+// simple in-memory cache to avoid duplicate calls during the session
+const memory = new Map();
+
+function qs(params) {
+  const u = new URLSearchParams();
+  Object.entries(params).forEach(([k,v]) => {
+    if (v !== undefined && v !== null && v !== '') u.set(k, v);
+  });
+  return u.toString();
+}
+
+export async function searchRecipes({ query, maxCalories, diet, number = 20, signal }) {
+  const params = {
+    apiKey: KEY,
+    query,
+    number,
+    addRecipeInformation: true, // includes image, summary, etc.
+    instructionsRequired: true
+  };
+  if (diet) params.diet = diet;                      // "keto","vegan","vegetarian","paleo","..."
+  if (maxCalories) params.maxCalories = maxCalories;  // spoonacular supports this on complex endpoints; for search we'll filter client-side too
+
+  const url = `${API}/recipes/complexSearch?${qs(params)}`;
+
+  if (memory.has(url)) return memory.get(url);
+
+  const res = await fetch(url, { signal });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Search failed (${res.status}): ${text}`);
+  }
+  const data = await res.json();
+
+  // normalize minimal fields for our UI
+  const results = (data.results || []).map(r => ({
+    id: r.id,
+    title: r.title,
+    image: r.image,
+    calories: r.nutrition?.nutrients?.find(n => n.name === 'Calories')?.amount || null
+  }));
+
+  memory.set(url, results);
+  return results;
+}
+
+export async function getRecipeById(id, { signal } = {}) {
+  const url = `${API}/recipes/${id}/information?${qs({ apiKey: KEY, includeNutrition: true })}`;
+  if (memory.has(url)) return memory.get(url);
+  const res = await fetch(url, { signal });
+  if (!res.ok) throw new Error(`Recipe ${id} failed: ${res.status}`);
+  const r = await res.json();
+  const normalized = {
+    id: r.id,
+    title: r.title,
+    image: r.image,
+    calories: r.nutrition?.nutrients?.find(n => n.name === 'Calories')?.amount || null,
+    ingredients: (r.extendedIngredients || []).map(i => ({
+      name: i.name,
+      amount: i.amount,
+      unit: i.unit
+    })),
+    instructions: r.analyzedInstructions?.[0]?.steps?.map(s => s.step) || []
+  };
+  memory.set(url, normalized);
+  return normalized;
+}

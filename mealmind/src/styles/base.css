@@ -256,3 +256,6 @@ input:focus, select:focus { border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(14
   width: min(520px, 92vw);
 }
 .modal .row { display:flex; gap:.5rem; }
+
+.recipe-img { background:#f1f3f8; }
+.grid:empty + .muted { display:block; } /* small helper if you show an empty message */

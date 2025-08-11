@@ -1,41 +1,78 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import RecipeGrid from "../components/RecipeGrid";
-
-const MOCK = [
-  { id: "r1", title: "Chicken & Rice", image: "/images/placeholder.jpg", calories: 520 },
-  { id: "r2", title: "Veggie Pasta", image: "/images/placeholder.jpg", calories: 430 },
-  { id: "r3", title: "Salmon Bowl", image: "/images/placeholder.jpg", calories: 610 },
-];
+import { searchRecipes } from "../lib/recipes";
 
 export default function Search() {
   const [query, setQuery] = useState("");
   const [diet, setDiet] = useState("");
   const [maxCals, setMaxCals] = useState("");
   const [results, setResults] = useState([]);
+  const [status, setStatus] = useState("idle"); // idle | loading | error | success
+  const [error, setError] = useState(null);
 
-  // simple debounce
-  const debouncedQuery = useDebounce(query, 300);
-
+  // debounce
+  const [debounced, setDebounced] = useState(query);
   useEffect(() => {
-    // Filter MOCK locally for now; later replace with real API call
-    const q = debouncedQuery.trim().toLowerCase();
-    const out = MOCK.filter(r =>
-      (!q || r.title.toLowerCase().includes(q)) &&
-      (!maxCals || (r.calories || 0) <= Number(maxCals))
-    );
-    setResults(out);
-  }, [debouncedQuery, maxCals, diet]);
+    const t = setTimeout(() => setDebounced(query), 400);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  // abortable fetch when inputs change
+  const abortRef = useRef();
+  useEffect(() => {
+    // avoid empty searches
+    if (!debounced && !diet && !maxCals) {
+      setResults([]);
+      setStatus("idle");
+      setError(null);
+      return;
+    }
+
+    if (abortRef.current) abortRef.current.abort();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+
+    async function run() {
+      try {
+        setStatus("loading");
+        setError(null);
+        const data = await searchRecipes({
+          query: debounced,
+          diet,
+          maxCalories: maxCals || undefined,
+          number: 24,
+          signal: ctrl.signal
+        });
+
+        // if maxCals provided, also filter client-side as a safety net
+        const filtered = maxCals
+          ? data.filter(r => !r.calories || r.calories <= Number(maxCals))
+          : data;
+
+        setResults(filtered);
+        setStatus("success");
+      } catch (err) {
+        if (err.name === "AbortError") return;
+        setStatus("error");
+        setError(err.message || "Search failed");
+      }
+    }
+    run();
+
+    return () => ctrl.abort();
+  }, [debounced, diet, maxCals]);
 
   return (
     <section className="container">
       <h1>Search Recipes</h1>
+
       <form className="search-bar" onSubmit={(e) => e.preventDefault()}>
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="e.g., salmon, high-protein…"
         />
-        <button className="btn">Search</button>
+        <button className="btn" onClick={() => setDebounced(query)}>Search</button>
       </form>
 
       <div className="filters">
@@ -62,17 +99,10 @@ export default function Search() {
         </label>
       </div>
 
-      <RecipeGrid recipes={results} />
+      {status === "idle" && <p className="muted">Type a query to search recipes.</p>}
+      {status === "loading" && <p className="muted">Searching…</p>}
+      {status === "error" && <p className="muted" style={{ color: "#b91c1c" }}>{error}</p>}
+      {status === "success" && <RecipeGrid recipes={results} />}
     </section>
   );
-}
-
-// tiny debounce hook
-function useDebounce(value, delay = 300) {
-  const [v, setV] = useState(value);
-  useEffect(() => {
-    const t = setTimeout(() => setV(value), delay);
-    return () => clearTimeout(t);
-  }, [value, delay]);
-  return v;
 }
