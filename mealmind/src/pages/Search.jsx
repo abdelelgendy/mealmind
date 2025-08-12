@@ -7,9 +7,10 @@ export default function Search() {
   const [diet, setDiet] = useState("");
   const [maxCals, setMaxCals] = useState("");
   const [results, setResults] = useState([]);
-  const [status, setStatus] = useState("idle"); // idle | loading | error | success
+  const [status, setStatus] = useState("featured"); // idle | loading | error | success | featured
   const [error, setError] = useState(null);
-
+  const [featuredRecipes, setFeaturedRecipes] = useState([]);
+  
   // debounce
   const [debounced, setDebounced] = useState(query);
   useEffect(() => {
@@ -17,13 +18,37 @@ export default function Search() {
     return () => clearTimeout(t);
   }, [query]);
 
+  // Load featured recipes on page load
+  useEffect(() => {
+    async function loadFeatured() {
+      try {
+        setStatus("loading");
+        const featured = await searchRecipes({
+          query: "popular", 
+          number: 8
+        });
+        setFeaturedRecipes(featured);
+        setStatus("featured");
+      } catch (err) {
+        console.error("Failed to load featured recipes:", err);
+        // Still show as featured state, but with empty results
+        setStatus("featured");
+      }
+    }
+    loadFeatured();
+  }, []);
+
   // abortable fetch when inputs change
   const abortRef = useRef();
   useEffect(() => {
     // avoid empty searches
     if (!debounced && !diet && !maxCals) {
       setResults([]);
-      setStatus("idle");
+      if (featuredRecipes.length) {
+        setStatus("featured");
+      } else {
+        setStatus("idle");
+      }
       setError(null);
       return;
     }
@@ -62,6 +87,12 @@ export default function Search() {
     return () => ctrl.abort();
   }, [debounced, diet, maxCals]);
 
+  // Handle quick searches
+  const quickSearch = (term) => {
+    setQuery(term);
+    setDebounced(term);
+  };
+
   return (
     <section className="container">
       <h1>Search Recipes</h1>
@@ -98,11 +129,32 @@ export default function Search() {
           />
         </label>
       </div>
+      
+      <div className="quick-searches">
+        <p className="muted">Quick Searches:</p>
+        <div className="quick-search-buttons">
+          <button className="btn-tag" onClick={() => quickSearch("breakfast")}>Breakfast</button>
+          <button className="btn-tag" onClick={() => quickSearch("healthy lunch")}>Healthy Lunch</button>
+          <button className="btn-tag" onClick={() => quickSearch("quick dinner")}>Quick Dinner</button>
+          <button className="btn-tag" onClick={() => quickSearch("vegetarian")}>Vegetarian</button>
+          <button className="btn-tag" onClick={() => quickSearch("dessert")}>Dessert</button>
+        </div>
+      </div>
 
       {status === "idle" && <p className="muted">Type a query to search recipes.</p>}
       {status === "loading" && <p className="muted">Searching…</p>}
       {status === "error" && <p className="muted" style={{ color: "#b91c1c" }}>{error}</p>}
       {status === "success" && <RecipeGrid recipes={results} />}
+      {status === "featured" && (
+        <>
+          <h2 className="section-title">Featured Recipes</h2>
+          {featuredRecipes.length > 0 ? (
+            <RecipeGrid recipes={featuredRecipes} />
+          ) : (
+            <p className="muted">Try one of the quick searches above to discover recipes.</p>
+          )}
+        </>
+      )}
     </section>
   );
 }
