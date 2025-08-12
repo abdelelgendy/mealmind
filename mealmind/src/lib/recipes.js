@@ -21,7 +21,7 @@ export async function searchRecipes({ query, maxCalories, diet, number = 20, sig
     addRecipeInformation: true, // includes image, summary, etc.
     instructionsRequired: true
   };
-  if (diet) params.diet = diet;                      // "keto","vegan","vegetarian","paleo","..."
+  if (diet) params.diet = diet;                      // "ketogenic","vegan","vegetarian","paleo","pescetarian","gluten free","high protein","low carb","low fat","primal","whole30","dairy free"
   if (maxCalories) params.maxCalories = maxCalories;  // spoonacular supports this on complex endpoints; for search we'll filter client-side too
 
   const url = `${API}/recipes/complexSearch?${qs(params)}`;

@@ -88,9 +88,12 @@ export default function Search() {
   }, [debounced, diet, maxCals]);
 
   // Handle quick searches
-  const quickSearch = (term) => {
+  const quickSearch = (term, dietType = "") => {
     setQuery(term);
     setDebounced(term);
+    if (dietType) {
+      setDiet(dietType);
+    }
   };
 
   return (
@@ -109,13 +112,30 @@ export default function Search() {
       <div className="filters">
         <label>
           <span className="muted">Diet</span>
-          <select value={diet} onChange={(e)=>setDiet(e.target.value)}>
+          <select 
+            value={diet} 
+            onChange={(e) => {
+              const newDiet = e.target.value;
+              setDiet(newDiet);
+              // Trigger search if we have a query or if a diet is selected
+              if (query || newDiet) {
+                setDebounced(query); // This will trigger a search with the new diet value
+              }
+            }}
+          >
             <option value="">Any</option>
-            <option value="balanced">Balanced</option>
-            <option value="high-protein">High protein</option>
-            <option value="keto">Keto</option>
+            <option value="ketogenic">Keto</option>
+            <option value="low carb">Low Carb</option>
+            <option value="high protein">High Protein</option>
+            <option value="low fat">Low Fat</option>
             <option value="vegetarian">Vegetarian</option>
             <option value="vegan">Vegan</option>
+            <option value="paleo">Paleo</option>
+            <option value="primal">Primal</option>
+            <option value="whole30">Whole30</option>
+            <option value="pescetarian">Pescetarian</option>
+            <option value="gluten free">Gluten Free</option>
+            <option value="dairy free">Dairy Free</option>
           </select>
         </label>
         <label>
@@ -126,6 +146,12 @@ export default function Search() {
             placeholder="e.g., 600"
             value={maxCals}
             onChange={(e)=>setMaxCals(e.target.value)}
+            onBlur={() => {
+              // Trigger search when user finishes typing calories
+              if (query || diet || maxCals) {
+                setDebounced(query);
+              }
+            }}
           />
         </label>
       </div>
@@ -134,10 +160,13 @@ export default function Search() {
         <p className="muted">Quick Searches:</p>
         <div className="quick-search-buttons">
           <button className="btn-tag" onClick={() => quickSearch("breakfast")}>Breakfast</button>
-          <button className="btn-tag" onClick={() => quickSearch("healthy lunch")}>Healthy Lunch</button>
-          <button className="btn-tag" onClick={() => quickSearch("quick dinner")}>Quick Dinner</button>
-          <button className="btn-tag" onClick={() => quickSearch("vegetarian")}>Vegetarian</button>
-          <button className="btn-tag" onClick={() => quickSearch("dessert")}>Dessert</button>
+          <button className="btn-tag" onClick={() => quickSearch("lunch")}>Lunch</button>
+          <button className="btn-tag" onClick={() => quickSearch("dinner")}>Dinner</button>
+          <button className="btn-tag" onClick={() => quickSearch("chicken", "high protein")}>High Protein Chicken</button>
+          <button className="btn-tag" onClick={() => quickSearch("salad", "low carb")}>Low Carb Salad</button>
+          <button className="btn-tag" onClick={() => quickSearch("pasta", "vegetarian")}>Vegetarian Pasta</button>
+          <button className="btn-tag" onClick={() => quickSearch("fish", "pescetarian")}>Pescetarian Fish</button>
+          <button className="btn-tag" onClick={() => quickSearch("snack", "gluten free")}>Gluten-Free Snack</button>
         </div>
       </div>
 
