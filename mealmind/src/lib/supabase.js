@@ -13,3 +13,28 @@ export async function testConnection() {
   console.log("Supabase connection successful:", data);
   return true;
 }
+
+// Sign up with email and password
+export async function signUp(email, password) {
+  const { data, error } = await supabase.auth.signUp({ email, password });
+  if (error) throw error;
+  return data.user;
+}
+
+// Log in with email and password
+export async function logIn(email, password) {
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) throw error;
+  return data.user;
+}
+
+// Log out
+export async function logOut() {
+  const { error } = await supabase.auth.signOut();
+  if (error) throw error;
+}
+
+// Get current user session
+export function getCurrentUser() {
+  return supabase.auth.getUser().then(({ data }) => data.user);
+}
