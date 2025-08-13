@@ -97,3 +97,23 @@ export async function getCachedRecipeById(id) {
   }
   return data;
 }
+
+export async function testInsert() {
+  const { data, error } = await supabase
+    .from("recipes_cache")
+    .insert([
+      {
+        recipe_id: "test-recipe-1",
+        title: "Test Recipe",
+        image: "https://via.placeholder.com/150",
+        calories: 500,
+        ingredients: JSON.stringify([{ name: "Chicken", amount: 200, unit: "g" }]),
+        instructions: JSON.stringify(["Cook chicken", "Serve with rice"])
+      }
+    ]);
+  if (error) {
+    console.error("Error inserting test recipe:", error);
+  } else {
+    console.log("Inserted test recipe:", data);
+  }
+}
