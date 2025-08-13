@@ -1,3 +1,5 @@
+import { supabase } from "./supabase";
+
 const API = 'https://api.spoonacular.com';
 
 const KEY = import.meta.env.VITE_SPOONACULAR_KEY;
@@ -67,4 +69,31 @@ export async function getRecipeById(id, { signal } = {}) {
   };
   memory.set(url, normalized);
   return normalized;
+}
+
+export async function saveRecipeToCache(recipe) {
+  const { data, error } = await supabase
+    .from("recipes_cache")
+    .upsert([{ recipe_id: recipe.id, title: recipe.title, image: recipe.image, calories: recipe.calories, ingredients: recipe.ingredients, instructions: recipe.instructions }])
+    .select();
+
+  if (error) {
+    console.error("Error saving recipe:", error);
+    return null;
+  }
+  return data;
+}
+
+export async function getCachedRecipeById(id) {
+  const { data, error } = await supabase
+    .from("recipes_cache")
+    .select("*")
+    .eq("recipe_id", id)
+    .single();
+
+  if (error) {
+    console.error("Error fetching cached recipe:", error);
+    return null;
+  }
+  return data;
 }

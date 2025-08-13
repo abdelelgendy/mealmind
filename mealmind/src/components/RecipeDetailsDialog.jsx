@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Modal from "./Modal";
-import { getRecipeById } from "../lib/recipes";
+import { getCachedRecipeById, getRecipeById, saveRecipeToCache } from "../lib/recipes";
 
 export default function RecipeDetailsDialog({ open, onClose, recipeId }) {
   const [data, setData] = useState(null);
@@ -9,23 +9,39 @@ export default function RecipeDetailsDialog({ open, onClose, recipeId }) {
 
   useEffect(() => {
     if (!open || !recipeId) return;
-    const ctrl = new AbortController();
-
+    let isActive = true;
+    
     async function load() {
       setStatus("loading");
       setError(null);
+      
       try {
-        const r = await getRecipeById(recipeId, { signal: ctrl.signal });
-        setData(r);
-        setStatus("success");
+        // First, try fetching from cache
+        let cached = await getCachedRecipeById(recipeId);
+        if (cached && isActive) {
+          setData(cached);
+          setStatus("success");
+          return;
+        }
+
+        // If not found in cache, fetch from Spoonacular and save it to cache
+        const r = await getRecipeById(recipeId);
+        if (isActive) {
+          setData(r);
+          setStatus("success");
+          // Save it to Supabase cache
+          await saveRecipeToCache(r);
+        }
       } catch (e) {
-        if (e.name === "AbortError") return;
-        setStatus("error");
-        setError(e.message || "Failed to load recipe");
+        if (isActive) {
+          setStatus("error");
+          setError(e.message || "Failed to load recipe");
+        }
       }
     }
     load();
-    return () => ctrl.abort();
+    
+    return () => { isActive = false; };
   }, [open, recipeId]);
 
   return (
