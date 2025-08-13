@@ -117,3 +117,19 @@ export async function testInsert() {
     console.log("Inserted test recipe:", data);
   }
 }
+
+export async function removeRecipeFromCache(recipeId) {
+  if (!recipeId) return null;
+  
+  const { data, error } = await supabase
+    .from("recipes_cache")
+    .delete()
+    .eq("recipe_id", recipeId);
+    
+  if (error) {
+    console.error("Error removing recipe from cache:", error);
+    return null;
+  }
+  
+  return data;
+}
