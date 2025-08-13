@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import RecipeGrid from "../components/RecipeGrid";
-import { searchRecipes } from "../lib/recipes";
+import { searchRecipes, saveRecipeToCache } from "../lib/recipes";
+import { usePlan } from "../plan/PlanContext";
 
 export default function Search() {
+  const { setCell } = usePlan(); // we need to update Plan when adding recipe
   const [query, setQuery] = useState("");
   const [diet, setDiet] = useState("");
   const [maxCals, setMaxCals] = useState("");
@@ -96,6 +98,14 @@ export default function Search() {
     }
   };
 
+  // Handle adding recipes to plan
+  const addToPlan = async (recipe, day, slot) => {
+    // Save the recipe to Supabase first
+    await saveRecipeToCache(recipe);
+    // Now update the Plan context with this recipe using the selected day and slot
+    setCell(day, slot, { id: recipe.id, title: recipe.title });
+  };
+
   return (
     <section className="container">
       <h1>Search Recipes</h1>
@@ -173,12 +183,12 @@ export default function Search() {
       {status === "idle" && <p className="muted">Type a query to search recipes.</p>}
       {status === "loading" && <p className="muted">Searching…</p>}
       {status === "error" && <p className="muted" style={{ color: "#b91c1c" }}>{error}</p>}
-      {status === "success" && <RecipeGrid recipes={results} />}
+      {status === "success" && <RecipeGrid recipes={results} onAddToPlan={addToPlan} />}
       {status === "featured" && (
         <>
           <h2 className="section-title">Featured Recipes</h2>
           {featuredRecipes.length > 0 ? (
-            <RecipeGrid recipes={featuredRecipes} />
+            <RecipeGrid recipes={featuredRecipes} onAddToPlan={addToPlan} />
           ) : (
             <p className="muted">Try one of the quick searches above to discover recipes.</p>
           )}
