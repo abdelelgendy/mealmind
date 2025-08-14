@@ -14,7 +14,7 @@ export function AuthProvider({ children }) {
 
   // Fetch user's data (profile, pantry, meal plan)
   const fetchUserData = async (userId) => {
-    if (!userId) return;
+    if (!userId) return false;
     
     try {
       const [userProfile, userPantry, userMealPlan] = await Promise.all([
@@ -26,8 +26,10 @@ export function AuthProvider({ children }) {
       setProfile(userProfile);
       setPantry(userPantry || []);
       setMealPlan(userMealPlan || []);
+      return true;
     } catch (error) {
       console.error("Error fetching user data:", error);
+      return false;
     }
   };
 
@@ -48,15 +50,23 @@ export function AuthProvider({ children }) {
     // Check for the current user when the component mounts
     const checkUser = async () => {
       try {
+        // Set a safety timeout to ensure loading state doesn't get stuck
+        const safetyTimeout = setTimeout(() => {
+          console.log("Safety timeout triggered - forcing loading to complete");
+          setLoading(false);
+        }, 5000); // 5 seconds max for loading
+        
         const currentUser = await getCurrentUser();
         setUser(currentUser);
         
         if (currentUser) {
           await fetchUserData(currentUser.id);
         }
+        
+        clearTimeout(safetyTimeout);
+        setLoading(false);
       } catch (error) {
         console.error("Error checking user:", error);
-      } finally {
         setLoading(false);
       }
     };
@@ -66,11 +76,21 @@ export function AuthProvider({ children }) {
     // Listen for auth state changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        // Set a safety timeout for auth state changes too
+        const safetyTimeout = setTimeout(() => {
+          console.log("Auth state change safety timeout triggered");
+          setLoading(false);
+        }, 5000);
+        
         const currentUser = session?.user || null;
         setUser(currentUser);
         
         if (currentUser) {
-          await fetchUserData(currentUser.id);
+          try {
+            await fetchUserData(currentUser.id);
+          } catch (error) {
+            console.error("Error fetching user data on auth change:", error);
+          }
         } else {
           // Reset user data on sign out
           setProfile(null);
@@ -78,6 +98,7 @@ export function AuthProvider({ children }) {
           setMealPlan([]);
         }
         
+        clearTimeout(safetyTimeout);
         setLoading(false);
       }
     );

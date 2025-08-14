@@ -35,8 +35,18 @@ export async function logOut() {
 }
 
 // Get current user session
-export function getCurrentUser() {
-  return supabase.auth.getUser().then(({ data }) => data.user);
+export async function getCurrentUser() {
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    if (error) {
+      console.error("Error getting current user:", error);
+      return null;
+    }
+    return data.user;
+  } catch (error) {
+    console.error("Unexpected error in getCurrentUser:", error);
+    return null;
+  }
 }
 
 // Fetch user profile
