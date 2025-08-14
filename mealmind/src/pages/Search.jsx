@@ -126,7 +126,7 @@ export default function Search() {
       console.error("Failed to add recipe to plan:", error);
       // Even if the Supabase operation fails, update the local plan
       // so the UI is responsive
-      setCell(day, slot, { id: recipe.id, title: recipe.title, image: recipe.image });
+      setCell(day, slot, { id: recipe.id, title: recipe.title });
       throw error; // Re-throw the error to be caught by the AddToPlanDialog
     }
   };

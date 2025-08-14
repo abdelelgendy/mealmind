@@ -11,6 +11,7 @@ import SignUp from "./pages/SignUp.jsx";
 import LogIn from "./pages/LogIn.jsx";
 import { testConnection } from "./lib/supabase";
 import { AuthProvider, useAuth } from "./contexts/AuthContext.jsx";
+import { PlanProvider } from "./plan/PlanContext.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
 // Main app component
@@ -80,7 +81,9 @@ function AppContent() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <PlanProvider>
+        <AppContent />
+      </PlanProvider>
     </AuthProvider>
   );
 }

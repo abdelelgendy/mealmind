@@ -25,6 +25,9 @@ export function PlanProvider({ children }) {
     }
   }, []);
   const [plan, setPlan] = useState(initial);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // We'll move the Supabase loading logic to the Plan component for now
 
   useEffect(() => {
     localStorage.setItem(KEY, JSON.stringify(plan));
@@ -34,44 +37,19 @@ export function PlanProvider({ children }) {
     setPlan(prev => ({ ...prev, [day]: { ...prev[day], [slot]: recipe } }));
   }
   function clearCell(day, slot) {
-    // Get the current recipe in this cell
-    const recipeToRemove = plan[day][slot];
-    
-    // If there's a recipe with an id, remove it from Supabase
-    if (recipeToRemove && recipeToRemove.id) {
-      removeRecipeFromCache(recipeToRemove.id).catch(err => 
-        console.error(`Error removing recipe ${recipeToRemove.id} from cache:`, err)
-      );
-    }
-    
-    // Update the local state
+    // Update the local state only
+    // Supabase deletion is handled in the Plan component's handleClearCell function
     setPlan(prev => ({ ...prev, [day]: { ...prev[day], [slot]: null } }));
   }
+  
   function clearAll() { 
-    // Get all recipes with IDs that are currently in the plan
-    const recipesToRemove = [];
-    DAYS.forEach(day => {
-      SLOTS.forEach(slot => {
-        const recipe = plan[day][slot];
-        if (recipe && recipe.id) {
-          recipesToRemove.push(recipe.id);
-        }
-      });
-    });
-    
-    // Remove all recipes from Supabase
-    recipesToRemove.forEach(id => {
-      removeRecipeFromCache(id).catch(err => 
-        console.error(`Error removing recipe ${id} from cache:`, err)
-      );
-    });
-    
-    // Update the local state
+    // Update the local state only
+    // Supabase deletion is handled in the Plan component
     setPlan(emptyPlan()); 
   }
 
   return (
-    <PlanCtx.Provider value={{ plan, setCell, clearCell, clearAll, DAYS, SLOTS }}>
+    <PlanCtx.Provider value={{ plan, setCell, clearCell, clearAll, DAYS, SLOTS, isLoading }}>
       {children}
     </PlanCtx.Provider>
   );
