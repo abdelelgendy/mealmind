@@ -129,7 +129,21 @@ export async function saveMealPlan(userId, day, slot, recipe) {
 
   if (error) {
     console.error("Error saving meal plan:", error);
-    return [];
+    throw new Error(error.message);  // Throw an error to propagate
+  }
+  return data;
+}
+
+// Delete a meal plan entry for a user
+export async function deleteMealPlan(userId, day, slot) {
+  const { data, error } = await supabase
+    .from("meal_plans")
+    .delete()
+    .match({ user_id: userId, day, slot });
+
+  if (error) {
+    console.error("Error deleting meal plan:", error);
+    throw new Error(error.message);
   }
   return data;
 }

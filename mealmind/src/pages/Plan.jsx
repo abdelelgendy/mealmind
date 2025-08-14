@@ -1,30 +1,75 @@
 import { useState } from "react";
 import { usePlan } from "../plan/PlanContext";
+import { useAuth } from "../contexts/AuthContext";
+import { saveMealPlan } from "../lib/supabase";
 
 export default function Plan() {
   const { plan, setCell, clearCell, clearAll, DAYS, SLOTS } = usePlan();
+  const { user } = useAuth();
   const [editing, setEditing] = useState(null);
   const [text, setText] = useState("");
+  const [loading, setLoading] = useState(false);
 
   function startEdit(day, slot) {
     setEditing({ day, slot });
     setText(plan[day][slot]?.title ?? "");
   }
   
-  function saveEdit() {
+  async function saveEdit() {
     if (!editing) return;
     const { day, slot } = editing;
     const title = text.trim();
-    setCell(day, slot, title ? { id: crypto.randomUUID?.() || Math.random().toString(36).slice(2), title } : null);
-    setEditing(null);
-    setText("");
-  }
-
-  function handleClearCell(day, slot) {
-    clearCell(day, slot);
-    if (editing?.day === day && editing?.slot === slot) {
+    
+    setLoading(true);  // Set loading true when starting the process
+    
+    try {
+      if (title) {
+        const newRecipe = { 
+          title, 
+          id: crypto.randomUUID?.() || Math.random().toString(36).slice(2)
+        };
+        
+        // If the user is logged in, save to Supabase first
+        if (user) {
+          await saveMealPlan(user.id, day, slot, newRecipe);
+          console.log(`Recipe ${title} saved to ${day} ${slot} for user ${user.id}`);
+        }
+        
+        // Update local state
+        setCell(day, slot, newRecipe);
+      } else {
+        setCell(day, slot, null);
+      }
+      
       setEditing(null);
       setText("");
+    } catch (error) {
+      console.error("Error saving meal plan:", error);
+      alert("Error saving the meal plan. Please try again.");
+    } finally {
+      setLoading(false);  // Stop loading when done
+    }
+  }
+
+  async function handleClearCell(day, slot) {
+    try {
+      // If user is logged in, delete from Supabase first
+      if (user) {
+        const { deleteMealPlan } = await import('../lib/supabase');
+        await deleteMealPlan(user.id, day, slot);
+        console.log(`Recipe removed from ${day} ${slot} for user ${user.id}`);
+      }
+      
+      // Then update local state
+      clearCell(day, slot);
+      
+      if (editing?.day === day && editing?.slot === slot) {
+        setEditing(null);
+        setText("");
+      }
+    } catch (error) {
+      console.error("Error deleting meal plan:", error);
+      alert("Error removing the recipe from your plan. Please try again.");
     }
   }
 
@@ -69,8 +114,10 @@ export default function Plan() {
               onKeyDown={e => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") setEditing(null); }}
             />
             <div className="editor-actions">
-              <button className="btn" onClick={saveEdit}>Save</button>
-              <button className="btn-secondary" onClick={() => setEditing(null)}>Cancel</button>
+              <button className="btn" onClick={saveEdit} disabled={loading}>
+                {loading ? "Adding..." : "Save"}
+              </button>
+              <button className="btn-secondary" onClick={() => setEditing(null)} disabled={loading}>Cancel</button>
             </div>
             <p className="muted small">Later we'll populate cells from Search results with real recipes.</p>
           </div>

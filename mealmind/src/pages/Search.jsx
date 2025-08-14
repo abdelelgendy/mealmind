@@ -2,9 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import RecipeGrid from "../components/RecipeGrid";
 import { searchRecipes, saveRecipeToCache } from "../lib/recipes";
 import { usePlan } from "../plan/PlanContext";
+import { useAuth } from "../contexts/AuthContext";
+import { saveMealPlan } from "../lib/supabase";
 
 export default function Search() {
   const { setCell } = usePlan(); // we need to update Plan when adding recipe
+  const { user } = useAuth(); // Get the current user for Supabase operations
   const [query, setQuery] = useState("");
   const [diet, setDiet] = useState("");
   const [maxCals, setMaxCals] = useState("");
@@ -100,10 +103,32 @@ export default function Search() {
 
   // Handle adding recipes to plan
   const addToPlan = async (recipe, day, slot) => {
-    // Save the recipe to Supabase first
-    await saveRecipeToCache(recipe);
-    // Now update the Plan context with this recipe using the selected day and slot
-    setCell(day, slot, { id: recipe.id, title: recipe.title });
+    try {
+      // First save the recipe to Supabase cache
+      await saveRecipeToCache(recipe);
+      
+      // If user is logged in, save to their meal plan in Supabase
+      if (user) {
+        const recipeData = { 
+          id: recipe.id, 
+          title: recipe.title
+        };
+        
+        await saveMealPlan(user.id, day, slot, recipeData);
+        console.log(`Recipe added to ${day} ${slot} for user ${user.id}`);
+      }
+      
+      // Always update the local plan context
+      setCell(day, slot, { id: recipe.id, title: recipe.title });
+      
+      return true;
+    } catch (error) {
+      console.error("Failed to add recipe to plan:", error);
+      // Even if the Supabase operation fails, update the local plan
+      // so the UI is responsive
+      setCell(day, slot, { id: recipe.id, title: recipe.title, image: recipe.image });
+      throw error; // Re-throw the error to be caught by the AddToPlanDialog
+    }
   };
 
   return (

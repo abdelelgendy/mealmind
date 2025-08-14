@@ -12,6 +12,14 @@ export default function AddToPlanDialog({ open, onClose, recipe, onAddToPlan }) 
   async function add() {
     if (!recipe) return;
     setIsAdding(true);
+    
+    // Set a timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      console.error("Add to plan operation timed out");
+      setIsAdding(false);
+      alert("Operation timed out. Please try again.");
+    }, 10000); // 10 seconds timeout
+    
     try {
       // First save to Supabase if we have a custom handler
       if (onAddToPlan) {
@@ -27,7 +35,9 @@ export default function AddToPlanDialog({ open, onClose, recipe, onAddToPlan }) 
       onClose?.();
     } catch (error) {
       console.error("Error adding recipe to plan:", error);
+      alert(`Failed to add recipe to plan: ${error.message || "Unknown error"}. Please try again.`);
     } finally {
+      clearTimeout(timeoutId);
       setIsAdding(false);
     }
   }
