@@ -38,3 +38,88 @@ export async function logOut() {
 export function getCurrentUser() {
   return supabase.auth.getUser().then(({ data }) => data.user);
 }
+
+// Fetch user profile
+export async function getProfile(userId) {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", userId)
+    .single();
+
+  if (error) {
+    console.error("Error fetching profile:", error);
+    return null;
+  }
+  return data;
+}
+
+// Update user profile
+export async function updateProfile(userId, profile) {
+  const { data, error } = await supabase
+    .from("profiles")
+    .upsert([{ ...profile, id: userId }])
+    .select();
+
+  if (error) {
+    console.error("Error updating profile:", error);
+    return null;
+  }
+  return data;
+}
+
+// Fetch pantry items for a user
+export async function getPantry(userId) {
+  const { data, error } = await supabase
+    .from("pantry")
+    .select("*")
+    .eq("user_id", userId);
+
+  if (error) {
+    console.error("Error fetching pantry:", error);
+    return [];
+  }
+  return data;
+}
+
+// Add/update pantry items for a user
+export async function savePantry(userId, items) {
+  const { data, error } = await supabase
+    .from("pantry")
+    .upsert(items.map(item => ({ ...item, user_id: userId })))
+    .select();
+
+  if (error) {
+    console.error("Error saving pantry items:", error);
+    return [];
+  }
+  return data;
+}
+
+// Fetch meal plan for a user
+export async function getMealPlan(userId) {
+  const { data, error } = await supabase
+    .from("meal_plans")
+    .select("*")
+    .eq("user_id", userId);
+
+  if (error) {
+    console.error("Error fetching meal plan:", error);
+    return [];
+  }
+  return data;
+}
+
+// Add/update a meal plan for a user
+export async function saveMealPlan(userId, day, slot, recipe) {
+  const { data, error } = await supabase
+    .from("meal_plans")
+    .upsert([{ user_id: userId, day, slot, ...recipe }])
+    .select();
+
+  if (error) {
+    console.error("Error saving meal plan:", error);
+    return [];
+  }
+  return data;
+}

@@ -10,18 +10,18 @@ import Search from "./pages/Search.jsx";
 import SignUp from "./pages/SignUp.jsx";
 import LogIn from "./pages/LogIn.jsx";
 import { testConnection } from "./lib/supabase";
-import { testInsert } from "./lib/recipes";
-import { AuthProvider } from "./contexts/AuthContext.jsx";
+import { AuthProvider, useAuth } from "./contexts/AuthContext.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
-export default function App() {
+// Main app component
+function AppContent() {
+  const { user, profile, pantry, mealPlan } = useAuth();
+
   useEffect(() => {
     // Test connection when app loads
     testConnection().then(success => {
       if (success) {
         console.log("Supabase connection is successful!");
-        // After successful connection, test inserting a recipe
-        testInsert();
       } else {
         console.log("Failed to connect to Supabase.");
       }
@@ -29,7 +29,7 @@ export default function App() {
   }, []);
 
   return (
-    <AuthProvider>
+    <>
       <Header />
       <main className="container">
         <Routes>
@@ -38,7 +38,7 @@ export default function App() {
             path="/pantry" 
             element={
               <ProtectedRoute>
-                <Pantry />
+                <Pantry pantryItems={pantry} />
               </ProtectedRoute>
             } 
           />
@@ -46,7 +46,7 @@ export default function App() {
             path="/plan" 
             element={
               <ProtectedRoute>
-                <Plan />
+                <Plan mealPlan={mealPlan} />
               </ProtectedRoute>
             } 
           />
@@ -54,7 +54,7 @@ export default function App() {
             path="/preferences" 
             element={
               <ProtectedRoute>
-                <Preferences />
+                <Preferences profile={profile} />
               </ProtectedRoute>
             } 
           />
@@ -62,7 +62,7 @@ export default function App() {
             path="/profile" 
             element={
               <ProtectedRoute>
-                <Profile />
+                <Profile user={user} profile={profile} />
               </ProtectedRoute>
             } 
           />
@@ -72,6 +72,15 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>
+    </>
+  );
+}
+
+// Root component that provides the AuthContext
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
     </AuthProvider>
   );
 }
