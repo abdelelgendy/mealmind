@@ -78,7 +78,19 @@ export default function Plan() {
       <div className="plan-header">
         <h1>Weekly Meal Plan</h1>
         <div className="plan-actions">
-          <button className="btn-secondary" onClick={clearAll}>Clear week</button>
+          <button className="btn-secondary" onClick={async () => {
+            try {
+              if (user) {
+                const { deleteAllMealPlans } = await import('../lib/supabase');
+                await deleteAllMealPlans(user.id);
+                console.log(`All recipes cleared for user ${user.id}`);
+              }
+              clearAll();
+            } catch (error) {
+              console.error("Error clearing meal plan:", error);
+              alert("Error clearing your meal plan. Please try again.");
+            }
+          }}>Clear week</button>
         </div>
       </div>
 

@@ -147,3 +147,17 @@ export async function deleteMealPlan(userId, day, slot) {
   }
   return data;
 }
+
+// Delete all meal plans for a user
+export async function deleteAllMealPlans(userId) {
+  const { data, error } = await supabase
+    .from("meal_plans")
+    .delete()
+    .match({ user_id: userId });
+
+  if (error) {
+    console.error("Error deleting all meal plans:", error);
+    throw new Error(error.message);
+  }
+  return data;
+}
