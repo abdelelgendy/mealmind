@@ -203,3 +203,81 @@ export async function deleteAllMealPlans(userId) {
   }
   return data;
 }
+
+// Favorite recipes functions
+export async function getFavorites(userId) {
+  const { data, error } = await supabase
+    .from("favorites")
+    .select("*")
+    .eq("user_id", userId);
+
+  if (error) {
+    console.error("Error fetching favorites:", error);
+    return [];
+  }
+  return data;
+}
+
+export async function addToFavorites(userId, recipe) {
+  const { data, error } = await supabase
+    .from("favorites")
+    .upsert({
+      user_id: userId,
+      recipe_id: recipe.id,
+      title: recipe.title,
+      image: recipe.image
+    })
+    .select();
+
+  if (error) {
+    console.error("Error adding to favorites:", error);
+    throw new Error(error.message);
+  }
+  return data;
+}
+
+export async function removeFromFavorites(userId, recipeId) {
+  const { data, error } = await supabase
+    .from("favorites")
+    .delete()
+    .match({ user_id: userId, recipe_id: recipeId });
+
+  if (error) {
+    console.error("Error removing from favorites:", error);
+    throw new Error(error.message);
+  }
+  return data;
+}
+
+// Meal tracking functions
+export async function getMealTracking(userId) {
+  const { data, error } = await supabase
+    .from("meal_tracking")
+    .select("*")
+    .eq("user_id", userId);
+
+  if (error) {
+    console.error("Error fetching meal tracking:", error);
+    return [];
+  }
+  return data;
+}
+
+export async function trackMeal(userId, day, slot, status) {
+  const { data, error } = await supabase
+    .from("meal_tracking")
+    .upsert({
+      user_id: userId,
+      day,
+      slot,
+      status, // 'made', 'eaten', etc.
+      tracked_at: new Date().toISOString()
+    })
+    .select();
+
+  if (error) {
+    console.error("Error tracking meal:", error);
+    throw new Error(error.message);
+  }
+  return data;
+}

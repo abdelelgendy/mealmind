@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { getMealPlan } from "../lib/supabase";
+import { supabase } from "../lib/supabase";
 
 // Constants
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -40,6 +41,7 @@ export function PlanProvider({ children }) {
   const { user, mealPlan: userMealPlan } = useAuth();
   const [plan, setPlan] = useState(emptyPlan());
   const [isLoading, setIsLoading] = useState(false);
+  const [syncStatus, setSyncStatus] = useState("");
   
   // Initialize from local storage or empty plan
   useEffect(() => {
@@ -55,6 +57,39 @@ export function PlanProvider({ children }) {
         console.error("Error loading plan from local storage:", error);
       }
     }
+  }, [user]);
+  
+  // Set up real-time subscription to meal plan changes
+  useEffect(() => {
+    if (!user) return;
+    
+    setSyncStatus("Connecting to real-time updates...");
+    
+    // Subscribe to changes on the meal_plans table for this user
+    const subscription = supabase
+      .channel('meal_plans_changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'meal_plans',
+        filter: `user_id=eq.${user.id}`
+      }, (payload) => {
+        console.log('Real-time update received:', payload);
+        setSyncStatus("Syncing changes...");
+        
+        // Refresh the plan data when changes are detected
+        refreshPlan();
+      })
+      .subscribe((status) => {
+        console.log('Subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          setSyncStatus("Connected to real-time updates");
+        }
+      });
+      
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [user]);
   
   // When the user changes or userMealPlan changes, update the plan
@@ -117,6 +152,8 @@ export function PlanProvider({ children }) {
       DAYS, 
       SLOTS, 
       isLoading,
+      syncStatus,
+      setSyncStatus,
       isAuthenticated: !!user
     }}>
       {children}

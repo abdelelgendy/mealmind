@@ -1,0 +1,82 @@
+/* Recipe card styles */
+.recipe-card {
+  position: relative;
+}
+
+.favorite-btn-container {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 5;
+}
+
+.favorite-btn {
+  background-color: rgba(255, 255, 255, 0.8);
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.favorite-btn:hover {
+  background-color: rgba(255, 255, 255, 1);
+  transform: scale(1.1);
+}
+
+.favorite-btn.favorite-active {
+  color: #f59e0b;
+}
+
+/* Meal tracking styles */
+.meal-tracking-btn {
+  background: transparent;
+  border: 2px solid #ccc;
+  border-radius: 4px;
+  padding: 4px 8px;
+  margin-right: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.meal-tracking-btn.made {
+  border-color: #10b981;
+  background-color: rgba(16, 185, 129, 0.1);
+}
+
+.meal-tracking-btn.eaten {
+  border-color: #6366f1;
+  background-color: rgba(99, 102, 241, 0.1);
+}
+
+/* Syncing status styles */
+.sync-status {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  margin-left: 8px;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.sync-status.syncing {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+.sync-status.success {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.sync-status.error {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}

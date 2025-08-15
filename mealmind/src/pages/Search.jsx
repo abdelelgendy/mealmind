@@ -3,7 +3,7 @@ import RecipeGrid from "../components/RecipeGrid";
 import { searchRecipes, saveRecipeToCache } from "../lib/recipes";
 import { usePlan } from "../plan/PlanContext";
 import { useAuth } from "../contexts/AuthContext";
-import { saveMealPlan } from "../lib/supabase";
+import { saveMealPlan, getFavorites, addToFavorites, removeFromFavorites } from "../lib/supabase";
 
 export default function Search() {
   const { setCell } = usePlan(); // we need to update Plan when adding recipe
@@ -15,6 +15,7 @@ export default function Search() {
   const [status, setStatus] = useState("featured"); // idle | loading | error | success | featured
   const [error, setError] = useState(null);
   const [featuredRecipes, setFeaturedRecipes] = useState([]);
+  const [favorites, setFavorites] = useState([]);
   
   // debounce
   const [debounced, setDebounced] = useState(query);
@@ -23,25 +24,34 @@ export default function Search() {
     return () => clearTimeout(t);
   }, [query]);
 
-  // Load featured recipes on page load
+  // Load featured recipes and user favorites on page load
   useEffect(() => {
-    async function loadFeatured() {
+    async function loadData() {
       try {
         setStatus("loading");
+        
+        // Load featured recipes
         const featured = await searchRecipes({
           query: "popular", 
           number: 8
         });
         setFeaturedRecipes(featured);
+        
+        // Load user favorites if logged in
+        if (user) {
+          const userFavorites = await getFavorites(user.id);
+          setFavorites(userFavorites || []);
+        }
+        
         setStatus("featured");
       } catch (err) {
-        console.error("Failed to load featured recipes:", err);
+        console.error("Failed to load initial data:", err);
         // Still show as featured state, but with empty results
         setStatus("featured");
       }
     }
-    loadFeatured();
-  }, []);
+    loadData();
+  }, [user]);
 
   // abortable fetch when inputs change
   const abortRef = useRef();
@@ -130,6 +140,30 @@ export default function Search() {
       throw error; // Re-throw the error to be caught by the AddToPlanDialog
     }
   };
+  
+  // Handle favorite toggle
+  const handleFavoriteToggle = async (recipe, isFavorite) => {
+    if (!user) return;
+    
+    try {
+      if (isFavorite) {
+        await addToFavorites(user.id, recipe);
+        // Update local favorites list
+        setFavorites(prev => [...prev, { 
+          user_id: user.id,
+          recipe_id: recipe.id,
+          title: recipe.title,
+          image: recipe.image
+        }]);
+      } else {
+        await removeFromFavorites(user.id, recipe.id);
+        // Update local favorites list
+        setFavorites(prev => prev.filter(f => f.recipe_id !== recipe.id));
+      }
+    } catch (error) {
+      console.error("Error updating favorites:", error);
+    }
+  };
 
   return (
     <section className="container">
@@ -208,12 +242,24 @@ export default function Search() {
       {status === "idle" && <p className="muted">Type a query to search recipes.</p>}
       {status === "loading" && <p className="muted">Searching…</p>}
       {status === "error" && <p className="muted" style={{ color: "#b91c1c" }}>{error}</p>}
-      {status === "success" && <RecipeGrid recipes={results} onAddToPlan={addToPlan} />}
+      {status === "success" && (
+        <RecipeGrid 
+          recipes={results} 
+          onAddToPlan={addToPlan} 
+          favorites={favorites}
+          onFavoriteToggle={handleFavoriteToggle}
+        />
+      )}
       {status === "featured" && (
         <>
           <h2 className="section-title">Featured Recipes</h2>
           {featuredRecipes.length > 0 ? (
-            <RecipeGrid recipes={featuredRecipes} onAddToPlan={addToPlan} />
+            <RecipeGrid 
+              recipes={featuredRecipes} 
+              onAddToPlan={addToPlan} 
+              favorites={favorites}
+              onFavoriteToggle={handleFavoriteToggle}
+            />
           ) : (
             <p className="muted">Try one of the quick searches above to discover recipes.</p>
           )}

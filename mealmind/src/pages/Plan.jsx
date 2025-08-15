@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { usePlan } from "../plan/PlanContext";
 import { useAuth } from "../contexts/AuthContext";
-import { saveMealPlan, getMealPlan, deleteMealPlan, deleteAllMealPlans } from "../lib/supabase";
+import { saveMealPlan, getMealPlan, deleteMealPlan, deleteAllMealPlans, getMealTracking, trackMeal } from "../lib/supabase";
 
 export default function Plan() {
   const { plan, setCell, clearCell, clearAll, DAYS, SLOTS, refreshPlan, isAuthenticated } = usePlan();
@@ -10,6 +10,7 @@ export default function Plan() {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [syncStatus, setSyncStatus] = useState(""); // For showing sync status messages
+  const [mealTracking, setMealTracking] = useState({});  // Store meal tracking status
   
   // When user changes, refresh the plan from Supabase - only on initial mount or user change
   useEffect(() => {
@@ -21,11 +22,27 @@ export default function Plan() {
       // Using a flag to prevent recursive calls
       let isMounted = true;
       
-      getMealPlan(user.id)
-        .then(userMealPlan => {
+      // Load both meal plan and meal tracking data
+      Promise.all([
+        getMealPlan(user.id),
+        getMealTracking(user.id)
+      ])
+        .then(([userMealPlan, userMealTracking]) => {
           if (isMounted) {
             console.log("Loaded meal plan from Supabase:", userMealPlan);
             setSyncStatus("Meal plan loaded successfully");
+            
+            // Process meal tracking data
+            if (userMealTracking && userMealTracking.length) {
+              // Convert array to object for easier lookup
+              const trackingObj = {};
+              userMealTracking.forEach(item => {
+                const key = `${item.day}-${item.slot}`;
+                trackingObj[key] = item.status;
+              });
+              setMealTracking(trackingObj);
+              console.log("Loaded meal tracking data:", trackingObj);
+            }
             
             // Don't call refreshUserData here as it creates a loop
             // The AuthContext already loads meal plans on user login
@@ -33,7 +50,7 @@ export default function Plan() {
         })
         .catch(error => {
           if (isMounted) {
-            console.error("Error loading meal plan:", error);
+            console.error("Error loading meal plan data:", error);
             setSyncStatus("Error loading your meal plan");
           }
         })
@@ -184,6 +201,21 @@ export default function Plan() {
     
     try {
       await refreshUserData();
+      
+      // Also refresh meal tracking data
+      if (user) {
+        const userMealTracking = await getMealTracking(user.id);
+        if (userMealTracking && userMealTracking.length) {
+          // Convert array to object for easier lookup
+          const trackingObj = {};
+          userMealTracking.forEach(item => {
+            const key = `${item.day}-${item.slot}`;
+            trackingObj[key] = item.status;
+          });
+          setMealTracking(trackingObj);
+        }
+      }
+      
       setSyncStatus("Meal plan refreshed");
     } catch (error) {
       console.error("Error refreshing meal plan:", error);
@@ -191,6 +223,34 @@ export default function Plan() {
     } finally {
       setLoading(false);
       // Clear status after a few seconds
+      setTimeout(() => setSyncStatus(""), 3000);
+    }
+  }
+  
+  // Handle meal tracking
+  async function handleTrackMeal(day, slot, status) {
+    if (!user) {
+      alert("Please log in to track meals");
+      return;
+    }
+    
+    try {
+      // Update local state first for immediate feedback
+      setMealTracking(prev => ({
+        ...prev,
+        [`${day}-${slot}`]: status
+      }));
+      
+      // Then save to Supabase
+      await trackMeal(user.id, day, slot, status);
+      console.log(`Meal ${day} ${slot} marked as ${status}`);
+      
+      // Show quick feedback
+      setSyncStatus(`Meal marked as ${status}`);
+      setTimeout(() => setSyncStatus(""), 2000);
+    } catch (error) {
+      console.error("Error tracking meal:", error);
+      setSyncStatus("Error tracking meal");
       setTimeout(() => setSyncStatus(""), 3000);
     }
   }
@@ -234,6 +294,8 @@ export default function Plan() {
                 day={day}
                 slot={slot}
                 value={plan[day][slot]?.title || ""}
+                trackingStatus={mealTracking[`${day}-${slot}`]}
+                onTrackMeal={user ? handleTrackMeal : null}
                 onEdit={() => startEdit(day, slot)}
                 onClear={() => handleClearCell(day, slot)}
               />
@@ -276,7 +338,7 @@ function FragmentRow({ slot, children }) {
   );
 }
 
-function Cell({ day, slot, value, onEdit, onClear }) {
+function Cell({ day, slot, value, onEdit, onClear, trackingStatus, onTrackMeal }) {
   return (
     <div className="plan-cell">
       {value ? (
@@ -286,6 +348,25 @@ function Cell({ day, slot, value, onEdit, onClear }) {
             <button className="link" onClick={onEdit}>Edit</button>
             <button className="link danger" onClick={onClear}>Remove</button>
           </div>
+          
+          {onTrackMeal && (
+            <div className="meal-tracking">
+              <button 
+                className={`meal-tracking-btn ${trackingStatus === 'made' ? 'made' : ''}`}
+                onClick={() => onTrackMeal(day, slot, 'made')}
+                aria-label="Mark as made"
+              >
+                Made ✓
+              </button>
+              <button 
+                className={`meal-tracking-btn ${trackingStatus === 'eaten' ? 'eaten' : ''}`}
+                onClick={() => onTrackMeal(day, slot, 'eaten')}
+                aria-label="Mark as eaten"
+              >
+                Eaten ✓
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         <button className="cell-empty" onClick={onEdit}>+ Add</button>
