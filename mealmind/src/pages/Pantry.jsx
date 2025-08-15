@@ -1,17 +1,33 @@
 import { useEffect, useMemo, useState } from "react";
 import { loadPantry, savePantry } from "../utils/storage";
+import { useAuth } from "../contexts/AuthContext";
+import { savePantry as saveUserPantry } from "../lib/supabase";
 
 function uid() {
   return Math.random().toString(36).slice(2, 9);
 }
 
 export default function Pantry() {
-  const [items, setItems] = useState(() => loadPantry());
+  const { user, pantry: userPantry, setPantry } = useAuth();
+  const [items, setItems] = useState(() => user ? userPantry : loadPantry());
   const [form, setForm] = useState({ name: "", quantity: "", unit: "" });
   const [editingId, setEditingId] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  // Use user pantry when available
+  useEffect(() => {
+    if (user && userPantry) {
+      setItems(userPantry);
+    }
+  }, [user, userPantry]);
 
   // persist on change
-  useEffect(() => { savePantry(items); }, [items]);
+  useEffect(() => { 
+    if (!user) {
+      // Local storage for non-authenticated users
+      savePantry(items); 
+    }
+  }, [items, user]);
 
   // derived: simple count & distinct items
   const stats = useMemo(() => ({
@@ -21,23 +37,53 @@ export default function Pantry() {
 
   function resetForm() { setForm({ name: "", quantity: "", unit: "" }); }
 
-  function onSubmit(e) {
+  async function onSubmit(e) {
     e.preventDefault();
     const name = form.name.trim();
     const quantity = Number(form.quantity) || 0;
     const unit = form.unit.trim();
 
     if (!name) return; // minimal validation
-
-    if (editingId) {
-      setItems(prev => prev.map(it =>
-        it.id === editingId ? { ...it, name, quantity, unit } : it
-      ));
+    
+    setLoading(true);
+    
+    try {
+      let updatedItems;
+      
+      if (editingId) {
+        // Update an existing item
+        updatedItems = items.map(it =>
+          it.id === editingId ? { ...it, name, quantity, unit } : it
+        );
+      } else {
+        // Add a new item
+        const newItem = { 
+          id: uid(), 
+          name, 
+          quantity, 
+          unit 
+        };
+        updatedItems = [newItem, ...items];
+      }
+      
+      // Update local state
+      setItems(updatedItems);
+      
+      // If user is logged in, save to Supabase
+      if (user) {
+        await saveUserPantry(user.id, updatedItems);
+        setPantry(updatedItems); // Update the auth context
+        console.log("Pantry saved to Supabase");
+      }
+      
       setEditingId(null);
-    } else {
-      setItems(prev => [{ id: uid(), name, quantity, unit }, ...prev]);
+      resetForm();
+    } catch (error) {
+      console.error("Error saving pantry item:", error);
+      alert("Error saving pantry item. Please try again.");
+    } finally {
+      setLoading(false);
     }
-    resetForm();
   }
 
   function onEdit(id) {
@@ -47,16 +93,55 @@ export default function Pantry() {
     setEditingId(id);
   }
 
-  function onDelete(id) {
-    setItems(prev => prev.filter(it => it.id !== id));
-    if (editingId === id) {
-      setEditingId(null);
-      resetForm();
+  async function onDelete(id) {
+    setLoading(true);
+    
+    try {
+      const updatedItems = items.filter(it => it.id !== id);
+      
+      // Update local state
+      setItems(updatedItems);
+      
+      // If user is logged in, save to Supabase
+      if (user) {
+        await saveUserPantry(user.id, updatedItems);
+        setPantry(updatedItems); // Update the auth context
+        console.log("Updated pantry saved to Supabase after item deletion");
+      }
+      
+      if (editingId === id) {
+        setEditingId(null);
+        resetForm();
+      }
+    } catch (error) {
+      console.error("Error deleting pantry item:", error);
+      alert("Error deleting pantry item. Please try again.");
+    } finally {
+      setLoading(false);
     }
   }
 
-  function onClearAll() {
-    if (confirm("Clear all pantry items?")) setItems([]);
+  async function onClearAll() {
+    if (confirm("Clear all pantry items?")) {
+      setLoading(true);
+      
+      try {
+        // Update local state
+        setItems([]);
+        
+        // If user is logged in, save to Supabase
+        if (user) {
+          await saveUserPantry(user.id, []);
+          setPantry([]); // Update the auth context
+          console.log("Cleared pantry in Supabase");
+        }
+      } catch (error) {
+        console.error("Error clearing pantry:", error);
+        alert("Error clearing pantry. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    }
   }
 
   return (
@@ -83,8 +168,10 @@ export default function Pantry() {
           value={form.unit}
           onChange={e => setForm({ ...form, unit: e.target.value })}
         />
-        <button className="btn">{editingId ? "Update" : "Add"}</button>
-        {editingId && (
+        <button className="btn" disabled={loading}>
+          {loading ? "Saving..." : (editingId ? "Update" : "Add")}
+        </button>
+        {editingId && !loading && (
           <button type="button" className="btn-secondary" onClick={() => { setEditingId(null); resetForm(); }}>
             Cancel
           </button>

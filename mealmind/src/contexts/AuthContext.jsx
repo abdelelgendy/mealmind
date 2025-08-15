@@ -11,6 +11,7 @@ export function AuthProvider({ children }) {
   const [pantry, setPantry] = useState([]);
   const [mealPlan, setMealPlan] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Fetch user's data (profile, pantry, meal plan)
   const fetchUserData = async (userId) => {
@@ -113,12 +114,16 @@ export function AuthProvider({ children }) {
   const value = {
     user,
     profile,
-    setProfile,
+    setProfile: (newProfile) => {
+      console.log("Setting new profile in context:", newProfile);
+      setProfile(newProfile);
+    },
     pantry,
     setPantry,
     mealPlan,
     setMealPlan,
     loading,
+    error,
     isAuthenticated: !!user,
     logOut: handleLogOut,
     refreshUserData: () => user && fetchUserData(user.id),

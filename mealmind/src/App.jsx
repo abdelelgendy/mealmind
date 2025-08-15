@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { AuthProvider } from "./contexts/AuthContext.jsx";
 import { PlanProvider } from "./plan/PlanContext.jsx";
-import Header from "./componenets/Header.jsx";
+import Header from "./components/Header.jsx";
 import AppRoutes from "./routes/AppRoutes.jsx";
 import { initializeServices } from "./lib/initialize.js";
 

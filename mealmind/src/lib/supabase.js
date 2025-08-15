@@ -66,16 +66,52 @@ export async function getProfile(userId) {
 
 // Update user profile
 export async function updateProfile(userId, profile) {
-  const { data, error } = await supabase
-    .from("profiles")
-    .upsert([{ ...profile, id: userId }])
-    .select();
-
-  if (error) {
-    console.error("Error updating profile:", error);
-    return null;
+  try {
+    console.log(`Starting updateProfile for user ${userId} with:`, profile);
+    
+    // Use upsert instead of checking existence first - more atomic
+    const { data, error } = await supabase
+      .from("profiles")
+      .upsert([{ id: userId, ...profile }], { 
+        onConflict: 'id',
+        returning: 'representation' 
+      })
+      .select();
+    
+    if (error) {
+      console.error("Error in profile upsert operation:", error);
+      throw new Error(`Supabase upsert error: ${error.message}`);
+    }
+    
+    if (!data || data.length === 0) {
+      console.warn("No data returned from upsert operation");
+      
+      // Double-check if the profile exists now (as a fallback)
+      const { data: checkData, error: checkError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single();
+        
+      if (checkError) {
+        console.error("Error in fallback profile check:", checkError);
+        throw new Error("Failed to confirm profile update");
+      }
+      
+      if (checkData) {
+        console.log("Profile found in fallback check:", checkData);
+        return [checkData]; // Return in same format as upsert
+      } else {
+        throw new Error("Could not find or create profile");
+      }
+    }
+    
+    console.log("Profile successfully updated/created:", data);
+    return data;
+  } catch (error) {
+    console.error("Exception in updateProfile:", error.message);
+    throw error;
   }
-  return data;
 }
 
 // Fetch pantry items for a user
@@ -124,7 +160,13 @@ export async function getMealPlan(userId) {
 export async function saveMealPlan(userId, day, slot, recipe) {
   const { data, error } = await supabase
     .from("meal_plans")
-    .upsert([{ user_id: userId, day, slot, ...recipe }])
+    .upsert([{ 
+      user_id: userId, 
+      day, 
+      slot, 
+      recipe_id: recipe.id,
+      title: recipe.title
+    }])
     .select();
 
   if (error) {
