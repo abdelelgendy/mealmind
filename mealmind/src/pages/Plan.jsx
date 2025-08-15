@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { usePlan } from "../plan/PlanContext";
 import { useAuth } from "../contexts/AuthContext";
 import { saveMealPlan, getMealPlan, deleteMealPlan, deleteAllMealPlans, getMealTracking, trackMeal } from "../lib/supabase";
+import MealTrackingSummary from "../components/MealTrackingSummary";
 
 export default function Plan() {
   const { plan, setCell, clearCell, clearAll, DAYS, SLOTS, refreshPlan, isAuthenticated } = usePlan();
@@ -235,18 +236,43 @@ export default function Plan() {
     }
     
     try {
-      // Update local state first for immediate feedback
-      setMealTracking(prev => ({
-        ...prev,
-        [`${day}-${slot}`]: status
-      }));
+      // Get meal info for better messages
+      const mealTitle = plan[day][slot]?.title || "Meal";
       
-      // Then save to Supabase
-      await trackMeal(user.id, day, slot, status);
-      console.log(`Meal ${day} ${slot} marked as ${status}`);
+      // If status is empty, we're toggling off
+      if (status === '') {
+        // Update local state first for immediate feedback
+        setMealTracking(prev => {
+          const newTracking = {...prev};
+          delete newTracking[`${day}-${slot}`];
+          return newTracking;
+        });
+        
+        // Then save to Supabase (status empty = remove tracking)
+        await trackMeal(user.id, day, slot, '');
+        console.log(`Tracking removed for ${mealTitle} on ${day} ${slot}`);
+        
+        // Show quick feedback
+        setSyncStatus(`Tracking removed for ${mealTitle}`);
+      } else {
+        // Update local state first for immediate feedback
+        setMealTracking(prev => ({
+          ...prev,
+          [`${day}-${slot}`]: status
+        }));
+        
+        // Then save to Supabase
+        await trackMeal(user.id, day, slot, status);
+        console.log(`${mealTitle} on ${day} ${slot} marked as ${status}`);
+        
+        // Show descriptive feedback based on status
+        const statusMsg = status === 'made' 
+          ? `${mealTitle} marked as prepared` 
+          : `${mealTitle} marked as consumed`;
+        
+        setSyncStatus(statusMsg);
+      }
       
-      // Show quick feedback
-      setSyncStatus(`Meal marked as ${status}`);
       setTimeout(() => setSyncStatus(""), 2000);
     } catch (error) {
       console.error("Error tracking meal:", error);
@@ -281,6 +307,16 @@ export default function Plan() {
           )}
         </div>
       </div>
+      
+      {/* Show meal tracking summary if user is logged in */}
+      {user && (
+        <MealTrackingSummary 
+          mealTracking={mealTracking} 
+          plan={plan} 
+          days={DAYS} 
+          slots={SLOTS} 
+        />
+      )}
 
       <div className="plan-grid">
         <div className="plan-corner" />
@@ -353,17 +389,19 @@ function Cell({ day, slot, value, onEdit, onClear, trackingStatus, onTrackMeal }
             <div className="meal-tracking">
               <button 
                 className={`meal-tracking-btn ${trackingStatus === 'made' ? 'made' : ''}`}
-                onClick={() => onTrackMeal(day, slot, 'made')}
-                aria-label="Mark as made"
+                onClick={() => onTrackMeal(day, slot, trackingStatus === 'made' ? '' : 'made')}
+                title={trackingStatus === 'made' ? 'Prepared' : 'Mark as prepared'}
+                aria-label={trackingStatus === 'made' ? 'Prepared' : 'Mark as prepared'}
               >
-                Made ✓
+                {trackingStatus === 'made' ? '👨‍🍳' : '🍳'}
               </button>
               <button 
                 className={`meal-tracking-btn ${trackingStatus === 'eaten' ? 'eaten' : ''}`}
-                onClick={() => onTrackMeal(day, slot, 'eaten')}
-                aria-label="Mark as eaten"
+                onClick={() => onTrackMeal(day, slot, trackingStatus === 'eaten' ? '' : 'eaten')}
+                title={trackingStatus === 'eaten' ? 'Consumed' : 'Mark as consumed'}
+                aria-label={trackingStatus === 'eaten' ? 'Consumed' : 'Mark as consumed'}
               >
-                Eaten ✓
+                {trackingStatus === 'eaten' ? '✅' : '🍽️'}
               </button>
             </div>
           )}

@@ -264,6 +264,21 @@ export async function getMealTracking(userId) {
 }
 
 export async function trackMeal(userId, day, slot, status) {
+  // If status is empty, delete the tracking entry
+  if (!status) {
+    const { data, error } = await supabase
+      .from("meal_tracking")
+      .delete()
+      .match({ user_id: userId, day, slot });
+      
+    if (error) {
+      console.error("Error removing meal tracking:", error);
+      throw new Error(error.message);
+    }
+    return data;
+  }
+  
+  // Otherwise, create or update the tracking
   const { data, error } = await supabase
     .from("meal_tracking")
     .upsert({
