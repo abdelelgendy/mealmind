@@ -1,10 +1,13 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { removeRecipeFromCache } from "../lib/recipes";
+import { useAuth } from "../contexts/AuthContext";
+import { getMealPlan } from "../lib/supabase";
 
-const KEY = "mealmind_plan_v1";
+// Constants
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const SLOTS = ["breakfast", "lunch", "dinner"];
+const LOCAL_STORAGE_KEY_PREFIX = "mealmind_plan_";
 
+// Create an empty plan structure
 function emptyPlan() {
   return DAYS.reduce((acc, d) => {
     acc[d] = SLOTS.reduce((m, s) => (m[s] = null, m), {});
@@ -12,44 +15,110 @@ function emptyPlan() {
   }, {});
 }
 
+// Convert flat Supabase meal plan array to structured plan object
+function convertDbPlanToLocalPlan(mealPlanArray) {
+  const planObj = emptyPlan();
+  
+  if (Array.isArray(mealPlanArray)) {
+    mealPlanArray.forEach(item => {
+      if (item && item.day && item.slot) {
+        planObj[item.day][item.slot] = {
+          id: item.recipe_id,
+          title: item.title
+        };
+      }
+    });
+  }
+  
+  return planObj;
+}
+
 const PlanCtx = createContext(null);
 export const usePlan = () => useContext(PlanCtx);
 
 export function PlanProvider({ children }) {
-  const initial = useMemo(() => {
-    try {
-      const raw = localStorage.getItem(KEY);
-      return raw ? JSON.parse(raw) : emptyPlan();
-    } catch {
-      return emptyPlan();
-    }
-  }, []);
-  const [plan, setPlan] = useState(initial);
+  const { user, mealPlan: userMealPlan } = useAuth();
+  const [plan, setPlan] = useState(emptyPlan());
   const [isLoading, setIsLoading] = useState(false);
   
-  // We'll move the Supabase loading logic to the Plan component for now
-
+  // Initialize from local storage or empty plan
   useEffect(() => {
-    localStorage.setItem(KEY, JSON.stringify(plan));
-  }, [plan]);
+    // If not logged in, try to get from local storage
+    if (!user) {
+      try {
+        const localStorageKey = LOCAL_STORAGE_KEY_PREFIX + "guest";
+        const savedPlan = localStorage.getItem(localStorageKey);
+        if (savedPlan) {
+          setPlan(JSON.parse(savedPlan));
+        }
+      } catch (error) {
+        console.error("Error loading plan from local storage:", error);
+      }
+    }
+  }, [user]);
+  
+  // When the user changes or userMealPlan changes, update the plan
+  useEffect(() => {
+    if (user && userMealPlan) {
+      console.log("Setting plan from user meal plan:", userMealPlan);
+      setPlan(convertDbPlanToLocalPlan(userMealPlan));
+    }
+  }, [user, userMealPlan]);
 
+  // Save to local storage when plan changes (only for guests)
+  useEffect(() => {
+    if (!user) {
+      try {
+        const localStorageKey = LOCAL_STORAGE_KEY_PREFIX + "guest";
+        localStorage.setItem(localStorageKey, JSON.stringify(plan));
+      } catch (error) {
+        console.error("Error saving plan to local storage:", error);
+      }
+    }
+  }, [plan, user]);
+
+  // Update a cell in the meal plan
   function setCell(day, slot, recipe) {
     setPlan(prev => ({ ...prev, [day]: { ...prev[day], [slot]: recipe } }));
   }
+  
+  // Clear a cell in the meal plan
   function clearCell(day, slot) {
-    // Update the local state only
-    // Supabase deletion is handled in the Plan component's handleClearCell function
     setPlan(prev => ({ ...prev, [day]: { ...prev[day], [slot]: null } }));
   }
   
+  // Clear the entire meal plan
   function clearAll() { 
-    // Update the local state only
-    // Supabase deletion is handled in the Plan component
     setPlan(emptyPlan()); 
+  }
+  
+  // Load user's meal plan from Supabase (useful for manual refresh)
+  async function refreshPlan() {
+    if (!user) return;
+    
+    setIsLoading(true);
+    try {
+      const userMealPlan = await getMealPlan(user.id);
+      setPlan(convertDbPlanToLocalPlan(userMealPlan || []));
+    } catch (error) {
+      console.error("Error refreshing meal plan:", error);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
-    <PlanCtx.Provider value={{ plan, setCell, clearCell, clearAll, DAYS, SLOTS, isLoading }}>
+    <PlanCtx.Provider value={{ 
+      plan, 
+      setCell, 
+      clearCell, 
+      clearAll, 
+      refreshPlan,
+      DAYS, 
+      SLOTS, 
+      isLoading,
+      isAuthenticated: !!user
+    }}>
       {children}
     </PlanCtx.Provider>
   );

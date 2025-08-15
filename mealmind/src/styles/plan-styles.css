@@ -1,0 +1,35 @@
+/* Plan page specific styles */
+
+.sync-status {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  margin-right: 1rem;
+  background-color: var(--bg);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  color: var(--muted);
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.plan-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.plan-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Make sure buttons don't shrink when sync status appears */
+.plan-actions button {
+  flex-shrink: 0;
+}
