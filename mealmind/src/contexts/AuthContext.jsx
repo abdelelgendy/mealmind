@@ -51,21 +51,37 @@ export function AuthProvider({ children }) {
     // Check for the current user when the component mounts
     const checkUser = async () => {
       try {
+        console.log("AuthContext: Checking for current user");
         // Set a safety timeout to ensure loading state doesn't get stuck
         const safetyTimeout = setTimeout(() => {
           console.log("Safety timeout triggered - forcing loading to complete");
           setLoading(false);
-        }, 5000); // 5 seconds max for loading
+        }, 7000); // 7 seconds max for loading
         
         const currentUser = await getCurrentUser();
+        console.log("AuthContext: Current user check result:", currentUser ? "Found user" : "No user");
         setUser(currentUser);
         
         if (currentUser) {
-          await fetchUserData(currentUser.id);
+          // Add a timeout for the fetchUserData call too
+          const dataTimeout = setTimeout(() => {
+            console.log("Data fetch timeout triggered");
+            setLoading(false);
+          }, 5000);
+          
+          try {
+            await fetchUserData(currentUser.id);
+            clearTimeout(dataTimeout);
+          } catch (err) {
+            console.error("Error in fetchUserData:", err);
+            clearTimeout(dataTimeout);
+            // Continue even if we can't fetch all data
+          }
         }
         
         clearTimeout(safetyTimeout);
         setLoading(false);
+        console.log("AuthContext: Initial loading complete");
       } catch (error) {
         console.error("Error checking user:", error);
         setLoading(false);
@@ -77,6 +93,7 @@ export function AuthProvider({ children }) {
     // Listen for auth state changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log("AuthContext: Auth state changed:", event);
         // Set a safety timeout for auth state changes too
         const safetyTimeout = setTimeout(() => {
           console.log("Auth state change safety timeout triggered");
@@ -88,11 +105,22 @@ export function AuthProvider({ children }) {
         
         if (currentUser) {
           try {
-            await fetchUserData(currentUser.id);
+            console.log("AuthContext: User authenticated, fetching data");
+            // Don't wait indefinitely for data fetch on auth change
+            const fetchPromise = fetchUserData(currentUser.id);
+            const timeoutPromise = new Promise(resolve => {
+              setTimeout(() => {
+                console.log("Auth state change data fetch timeout");
+                resolve(false);
+              }, 3000);
+            });
+            
+            await Promise.race([fetchPromise, timeoutPromise]);
           } catch (error) {
             console.error("Error fetching user data on auth change:", error);
           }
         } else {
+          console.log("AuthContext: No user in session, resetting data");
           // Reset user data on sign out
           setProfile(null);
           setPantry([]);
@@ -101,6 +129,7 @@ export function AuthProvider({ children }) {
         
         clearTimeout(safetyTimeout);
         setLoading(false);
+        console.log("AuthContext: Auth state change handling complete");
       }
     );
     

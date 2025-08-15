@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { updateProfile, supabase } from "../lib/supabase";
+import { delay, retryOperation } from "../lib/utils";
 
 export default function Profile() {
   const { user, profile, setProfile } = useAuth();
@@ -25,12 +26,22 @@ export default function Profile() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setLoading(true);
+    setLoading(true); // Set loading state
     setMessage({ type: "", text: "" });
     
     console.log("Starting profile update...");
     console.log("User ID:", user?.id);
     console.log("Form data:", form);
+    
+    // Always make sure loading state is reset after a reasonable time
+    const safetyTimeout = setTimeout(() => {
+      console.log("Safety timeout triggered - resetting loading state");
+      setLoading(false);
+      setMessage({ 
+        type: "warning", 
+        text: "Update took too long. Please check your connection and try again." 
+      });
+    }, 10000); // 10 seconds safety
 
     try {
       const updatedForm = {
@@ -42,6 +53,7 @@ export default function Profile() {
       // Basic validation
       if (updatedForm.calories < 500 || updatedForm.calories > 10000) {
         setMessage({ type: "error", text: "Please enter a reasonable calorie value (500-10000)" });
+        clearTimeout(safetyTimeout);
         setLoading(false);
         return;
       }
@@ -50,89 +62,53 @@ export default function Profile() {
         throw new Error("User not authenticated");
       }
 
-      // Update profile in Supabase - with a longer timeout
       console.log("Updating profile with data:", updatedForm);
       
-      let updateSuccess = false;
-      let updateAttempts = 0;
-      let updatedProfile;
-      const maxAttempts = 2;
+      // DIRECT APPROACH WITH NO EXTERNAL UTILITIES
+      console.log("Bypassing all utilities, direct Supabase approach");
       
-      while (!updateSuccess && updateAttempts < maxAttempts) {
-        updateAttempts++;
-        try {
-          console.log(`Profile update attempt ${updateAttempts}...`);
-          
-          // Create a timeout promise that rejects after 10 seconds (increased from 5)
-          const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error(`Profile update timed out after 10 seconds (attempt ${updateAttempts})`)), 10000);
-          });
-          
-          // Race the actual update against the timeout
-          updatedProfile = await Promise.race([
-            updateProfile(user.id, updatedForm),
-            timeoutPromise
-          ]);
-          
-          if (updatedProfile && updatedProfile.length > 0) {
-            updateSuccess = true;
-            break;
-          } else {
-            console.warn(`No profile data returned from update attempt ${updateAttempts}`);
-            // Wait a bit before retrying
-            if (updateAttempts < maxAttempts) {
-              await new Promise(resolve => setTimeout(resolve, 1000));
-            }
-          }
-        } catch (attemptError) {
-          console.error(`Error in profile update attempt ${updateAttempts}:`, attemptError);
-          // Wait before retrying
-          if (updateAttempts < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-          } else {
-            throw attemptError; // Re-throw on final attempt
-          }
-        }
+      // Just insert/update directly - simplest possible approach
+      const { data, error } = await supabase
+        .from("profiles")
+        .upsert([{ 
+          id: user.id,
+          calories: updatedForm.calories,
+          diet: updatedForm.diet,
+          allergies: updatedForm.allergies
+        }]);
+      
+      if (error) {
+        console.error("Direct upsert error:", error);
+        throw new Error(`Database error: ${error.message}`);
       }
       
-      console.log("Final update response:", updatedProfile);
+      console.log("Profile saved, fetching latest version");
       
-      if (updateSuccess) {
-        console.log("Profile updated successfully:", updatedProfile[0]);
-        setProfile(updatedProfile[0]);
-        setMessage({ type: "success", text: "Preferences updated successfully" });
-      } else {
-        console.warn("All profile update attempts failed, using direct insert fallback");
-        try {
-          console.log("Attempting direct upsert as fallback");
-          const { data: fallbackProfile, error: fallbackError } = await supabase
-            .from("profiles")
-            .upsert([{ id: user.id, ...updatedForm }], {
-              onConflict: 'id',
-              returning: 'representation'
-            })
-            .select();
-            
-          if (fallbackError) {
-            console.error("Direct upsert failed:", fallbackError);
-            setMessage({ type: "error", text: "Could not save preferences" });
-          } else if (fallbackProfile && fallbackProfile.length > 0) {
-            console.log("Fallback upsert succeeded:", fallbackProfile[0]);
-            setProfile(fallbackProfile[0]);
-            setMessage({ type: "success", text: "Preferences saved successfully" });
-          } else {
-            setMessage({ type: "warning", text: "Preferences may have been saved but could not be confirmed" });
-          }
-        } catch (insertError) {
-          console.error("Error in fallback upsert:", insertError);
-          setMessage({ type: "error", text: "Failed to save preferences" });
-        }
+      // Get the updated profile
+      const { data: latestProfile, error: fetchError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+      
+      if (fetchError) {
+        console.error("Error fetching updated profile:", fetchError);
+        throw new Error("Profile was saved but could not be retrieved");
       }
+      
+      console.log("Latest profile:", latestProfile);
+      
+      // Update the profile in context
+      setProfile(latestProfile);
+      setMessage({ type: "success", text: "Preferences saved successfully" });
+      
     } catch (error) {
       console.error("Error updating profile:", error);
       setMessage({ type: "error", text: "Error updating profile: " + (error.message || "Unknown error") });
     } finally {
-      console.log("Update process complete");
+      // Always clean up and reset loading state
+      clearTimeout(safetyTimeout);
+      console.log("Update process complete - resetting loading state");
       setLoading(false);
     }
   }
