@@ -1,73 +1,81 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePlan } from "../plan/PlanContext";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { saveMealPlan, getMealPlan, deleteMealPlan, deleteAllMealPlans, getMealTracking, trackMeal } from "../lib/supabase";
+import { saveMealPlan, getMealPlan, deleteMealPlan, deleteAllMealPlans } from "../lib/supabase";
+import AddToPlanDialog from "../components/AddToPlanDialog";
 import MealTrackingSummary from "../components/MealTrackingSummary";
 
 export default function Plan() {
-  const { plan, setCell, clearCell, clearAll, DAYS, SLOTS, refreshPlan, isAuthenticated } = usePlan();
+  const { plan, setCell, clearCell, clearAll, DAYS, SLOTS, refreshPlan } = usePlan();
   const { user, refreshUserData } = useAuth();
   const [editing, setEditing] = useState(null);
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [syncStatus, setSyncStatus] = useState(""); // For showing sync status messages
-  const [mealTracking, setMealTracking] = useState({});  // Store meal tracking status
+  const [mealTracking, setMealTracking] = useState({}); // Store meal tracking status
+  const [openDialog, setOpenDialog] = useState(false); // Toggle recipe selection dialog
+  const [selectedRecipe, setSelectedRecipe] = useState(null); // Recipe being added to the plan
+  
+  const navigate = useNavigate();
   
   // When user changes, refresh the plan from Supabase - only on initial mount or user change
   useEffect(() => {
-    if (user && user.id) {
-      console.log("User logged in, loading their meal plan");
-      setSyncStatus("Loading your meal plan...");
-      setLoading(true);
-      
-      // Using a flag to prevent recursive calls
-      let isMounted = true;
-      
-      // Load both meal plan and meal tracking data
-      Promise.all([
-        getMealPlan(user.id),
-        getMealTracking(user.id)
-      ])
-        .then(([userMealPlan, userMealTracking]) => {
-          if (isMounted) {
-            console.log("Loaded meal plan from Supabase:", userMealPlan);
-            setSyncStatus("Meal plan loaded successfully");
-            
-            // Process meal tracking data
-            if (userMealTracking && userMealTracking.length) {
-              // Convert array to object for easier lookup
-              const trackingObj = {};
-              userMealTracking.forEach(item => {
-                const key = `${item.day}-${item.slot}`;
-                trackingObj[key] = item.status;
-              });
-              setMealTracking(trackingObj);
-              console.log("Loaded meal tracking data:", trackingObj);
-            }
-            
-            // Don't call refreshUserData here as it creates a loop
-            // The AuthContext already loads meal plans on user login
-          }
-        })
-        .catch(error => {
-          if (isMounted) {
-            console.error("Error loading meal plan data:", error);
-            setSyncStatus("Error loading your meal plan");
-          }
-        })
-        .finally(() => {
-          if (isMounted) {
-            setLoading(false);
-            // Clear status after a few seconds
-            setTimeout(() => setSyncStatus(""), 3000);
-          }
-        });
-        
-      return () => {
-        isMounted = false; // Clean up to prevent state updates if component unmounts
-      };
+    if (!user) {
+      // Redirect to login if no user
+      //navigate("/login");
+      return;
     }
-  }, [user]); // Only depend on user, not refreshUserData
+    
+    console.log("User logged in, loading their meal plan");
+    setSyncStatus("Loading your meal plan...");
+    setLoading(true);
+    
+    // Using a flag to prevent recursive calls
+    let isMounted = true;
+    
+    // Fetch user's meal plan from Supabase
+    async function fetchMealPlan() {
+      try {
+        const userMealPlan = await getMealPlan(user.id);
+        
+        if (isMounted) {
+          console.log("Loaded meal plan from Supabase:", userMealPlan);
+          setSyncStatus("Meal plan loaded successfully");
+          
+          // Don't call refreshUserData here as it creates a loop
+          // The AuthContext already loads meal plans on user login
+        }
+      } catch (error) {
+        if (isMounted) {
+          console.error("Error loading meal plan:", error);
+          setSyncStatus("Error loading your meal plan");
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+          // Clear status after a few seconds
+          setTimeout(() => setSyncStatus(""), 3000);
+        }
+      }
+    }
+    
+    fetchMealPlan();
+    
+    return () => {
+      isMounted = false; // Clean up to prevent state updates if component unmounts
+    };
+  }, [user, navigate]);
+  
+  function startEdit(day, slot) {
+    setEditing({ day, slot });
+    setText(plan[day]?.[slot]?.title ?? "");
+  }
+  
+  function openAddRecipeDialog(day, slot) {
+    setEditing({ day, slot });
+    setOpenDialog(true);
+  } // Only depend on user, not refreshUserData
 
   function startEdit(day, slot) {
     setEditing({ day, slot });
@@ -357,10 +365,32 @@ export default function Plan() {
               </button>
               <button className="btn-secondary" onClick={() => setEditing(null)} disabled={loading}>Cancel</button>
             </div>
-            <p className="muted small">Later we'll populate cells from Search results with real recipes.</p>
+            <p className="muted small">You can type a recipe name or search for saved recipes.</p>
           </div>
         </div>
       )}
+      
+      <AddToPlanDialog
+        open={openDialog}
+        onClose={() => setOpenDialog(false)}
+        recipe={selectedRecipe}
+        onAddToPlan={(recipe, day, slot) => {
+          if (editing) {
+            setCell(editing.day, editing.slot, {
+              id: recipe.id,
+              title: recipe.title
+            });
+            if (user) {
+              saveMealPlan(user.id, editing.day, editing.slot, {
+                id: recipe.id,
+                title: recipe.title
+              });
+            }
+          }
+          setOpenDialog(false);
+          setEditing(null);
+        }}
+      />
     </section>
   );
 }
