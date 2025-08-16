@@ -39,7 +39,9 @@ export default function AppRoutes() {
       <Route 
         path="/preferences" 
         element={
-          <Navigate to="/profile" replace />
+          <ProtectedRoute>
+            <Preferences />
+          </ProtectedRoute>
         } 
       />
       <Route 

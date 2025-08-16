@@ -7,7 +7,7 @@ import { saveMealPlan, getFavorites, addToFavorites, removeFromFavorites } from 
 
 export default function Search() {
   const { setCell } = usePlan(); // we need to update Plan when adding recipe
-  const { user } = useAuth(); // Get the current user for Supabase operations
+  const { user, profile } = useAuth(); // Get the current user and profile for preferences
   const [query, setQuery] = useState("");
   const [diet, setDiet] = useState("");
   const [maxCals, setMaxCals] = useState("");
@@ -16,6 +16,7 @@ export default function Search() {
   const [error, setError] = useState(null);
   const [featuredRecipes, setFeaturedRecipes] = useState([]);
   const [favorites, setFavorites] = useState([]);
+  const [usePreferences, setUsePreferences] = useState(true);
   
   // debounce
   const [debounced, setDebounced] = useState(query);
@@ -24,7 +25,7 @@ export default function Search() {
     return () => clearTimeout(t);
   }, [query]);
 
-  // Load featured recipes and user favorites on page load
+  // Load featured recipes, user favorites, and apply user preferences on page load
   useEffect(() => {
     async function loadData() {
       try {
@@ -41,6 +42,17 @@ export default function Search() {
         if (user) {
           const userFavorites = await getFavorites(user.id);
           setFavorites(userFavorites || []);
+          
+          // Apply user preferences if available
+          if (profile && profile.preferences && usePreferences) {
+            const userPrefs = profile.preferences;
+            if (userPrefs.diet) {
+              setDiet(userPrefs.diet);
+            }
+            if (userPrefs.calories) {
+              setMaxCals(userPrefs.calories);
+            }
+          }
         }
         
         setStatus("featured");
@@ -51,7 +63,7 @@ export default function Search() {
       }
     }
     loadData();
-  }, [user]);
+  }, [user, profile, usePreferences]);
 
   // abortable fetch when inputs change
   const abortRef = useRef();
@@ -84,10 +96,63 @@ export default function Search() {
           signal: ctrl.signal
         });
 
-        // if maxCals provided, also filter client-side as a safety net
-        const filtered = maxCals
-          ? data.filter(r => !r.calories || r.calories <= Number(maxCals))
-          : data;
+        // Apply client-side filtering based on user preferences
+        let filtered = data;
+        
+        // Filter by calories if provided
+        if (maxCals) {
+          filtered = filtered.filter(r => !r.calories || r.calories <= Number(maxCals));
+        }
+        
+        // Apply user preferences if they exist and are enabled
+        if (user && profile && profile.preferences && usePreferences) {
+          const userPrefs = profile.preferences;
+          
+          // Filter by allergies
+          if (userPrefs.allergies) {
+            const allergies = userPrefs.allergies.split(',').map(a => a.trim().toLowerCase());
+            
+            if (allergies.length > 0) {
+              filtered = filtered.filter(recipe => {
+                // Check if recipe title or ingredients contain any of the allergens
+                return !allergies.some(allergen => 
+                  recipe.title.toLowerCase().includes(allergen) ||
+                  (recipe.ingredients && recipe.ingredients.some(ing => 
+                    ing.name.toLowerCase().includes(allergen)
+                  ))
+                );
+              });
+            }
+          }
+          
+          // Filter by max cooking time if specified
+          if (userPrefs.maxCookTime) {
+            const maxTime = Number(userPrefs.maxCookTime);
+            filtered = filtered.filter(recipe => 
+              !recipe.readyInMinutes || recipe.readyInMinutes <= maxTime || 
+              !recipe.cookTime || recipe.cookTime <= maxTime
+            );
+          }
+          
+          // Filter by meal size preference (this would require recipe data to include portion/serving info)
+          // For now we'll use a simple heuristic based on calories if available
+          if (userPrefs.mealSize) {
+            filtered = filtered.filter(recipe => {
+              if (!recipe.calories) return true; // Keep recipes without calorie info
+              
+              switch(userPrefs.mealSize) {
+                case 'small':
+                  return recipe.calories < 400;
+                case 'medium':
+                  return recipe.calories >= 400 && recipe.calories <= 700;
+                case 'large':
+                  return recipe.calories > 700;
+                default:
+                  return true;
+              }
+            });
+          }
+        }
 
         setResults(filtered);
         setStatus("success");
@@ -178,6 +243,28 @@ export default function Search() {
         <button className="btn" onClick={() => setDebounced(query)}>Search</button>
       </form>
 
+      {user && profile && profile.preferences && (
+        <div className="preferences-toggle">
+          <label className="toggle-label">
+            <input 
+              type="checkbox" 
+              checked={usePreferences}
+              onChange={(e) => setUsePreferences(e.target.checked)}
+            />
+            <span>Use my preferences</span>
+          </label>
+          {usePreferences && (
+            <div className="applied-preferences">
+              {profile.preferences.diet && <span className="pref-tag diet-tag">Diet: {profile.preferences.diet}</span>}
+              {profile.preferences.calories && <span className="pref-tag cal-tag">Max calories: {profile.preferences.calories}</span>}
+              {profile.preferences.allergies && <span className="pref-tag allergy-tag">Excluding: {profile.preferences.allergies}</span>}
+              {profile.preferences.maxCookTime && <span className="pref-tag time-tag">Max cooking time: {profile.preferences.maxCookTime} min</span>}
+              {profile.preferences.mealSize && <span className="pref-tag size-tag">Meal size: {profile.preferences.mealSize}</span>}
+            </div>
+          )}
+        </div>
+      )}
+      
       <div className="filters">
         <label>
           <span className="muted">Diet</span>
@@ -191,6 +278,7 @@ export default function Search() {
                 setDebounced(query); // This will trigger a search with the new diet value
               }
             }}
+            disabled={user && profile && profile.preferences && profile.preferences.diet && usePreferences}
           >
             <option value="">Any</option>
             <option value="ketogenic">Keto</option>
@@ -221,6 +309,7 @@ export default function Search() {
                 setDebounced(query);
               }
             }}
+            disabled={user && profile && profile.preferences && profile.preferences.calories && usePreferences}
           />
         </label>
       </div>

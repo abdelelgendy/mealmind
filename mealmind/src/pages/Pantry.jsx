@@ -32,8 +32,42 @@ export default function Pantry() {
   // derived: simple count & distinct items
   const stats = useMemo(() => ({
     count: items.length,
-    totalQty: items.reduce((sum, it) => sum + (Number(it.quantity) || 0), 0)
+    totalQty: items.reduce((sum, it) => sum + (Number(it.quantity) || 0), 0),
+    categories: [...new Set(items.map(it => categorizeIngredient(it.name)))]
   }), [items]);
+  
+  // Helper function to categorize ingredients for better organization
+  function categorizeIngredient(name) {
+    const lowerName = name.toLowerCase();
+    
+    if (lowerName.includes('chicken') || lowerName.includes('beef') || 
+        lowerName.includes('pork') || lowerName.includes('fish') ||
+        lowerName.includes('meat')) {
+      return 'Protein';
+    } else if (lowerName.includes('rice') || lowerName.includes('pasta') ||
+              lowerName.includes('bread') || lowerName.includes('flour') ||
+              lowerName.includes('grain')) {
+      return 'Grains';
+    } else if (lowerName.includes('milk') || lowerName.includes('cheese') ||
+              lowerName.includes('yogurt') || lowerName.includes('cream') ||
+              lowerName.includes('butter')) {
+      return 'Dairy';
+    } else if (lowerName.includes('apple') || lowerName.includes('orange') ||
+              lowerName.includes('banana') || lowerName.includes('berry') ||
+              lowerName.includes('fruit')) {
+      return 'Fruits';
+    } else if (lowerName.includes('carrot') || lowerName.includes('broccoli') ||
+              lowerName.includes('potato') || lowerName.includes('onion') ||
+              lowerName.includes('tomato') || lowerName.includes('vegetable')) {
+      return 'Vegetables';
+    } else if (lowerName.includes('oil') || lowerName.includes('vinegar') ||
+              lowerName.includes('sauce') || lowerName.includes('spice') ||
+              lowerName.includes('herb') || lowerName.includes('salt')) {
+      return 'Condiments';
+    }
+    
+    return 'Other';
+  }
 
   function resetForm() { setForm({ name: "", quantity: "", unit: "" }); }
 
@@ -185,25 +219,42 @@ export default function Pantry() {
         )}
       </div>
 
-      <ul className="pantry-list">
-        {items.map(it => (
-          <li key={it.id} className="pantry-row">
-            <div className="pantry-info">
-              <strong>{it.name}</strong>
-              <span className="muted">
-                {it.quantity || 0} {it.unit || ""}
-              </span>
-            </div>
-            <div className="row-actions">
-              <button className="link" onClick={() => onEdit(it.id)}>Edit</button>
-              <button className="link danger" onClick={() => onDelete(it.id)}>Delete</button>
-            </div>
-          </li>
-        ))}
-        {items.length === 0 && (
-          <li className="muted">No items yet. Add your first ingredient above.</li>
-        )}
-      </ul>
+      {items.length === 0 ? (
+        <div className="empty-pantry">
+          <p className="muted">No items yet. Add your first ingredient above.</p>
+          <p className="muted">Having ingredients in your pantry will help with recipe recommendations.</p>
+        </div>
+      ) : (
+        <div className="pantry-categories">
+          {['Protein', 'Vegetables', 'Fruits', 'Grains', 'Dairy', 'Condiments', 'Other'].map(category => {
+            const categoryItems = items.filter(it => categorizeIngredient(it.name) === category);
+            
+            if (categoryItems.length === 0) return null;
+            
+            return (
+              <div key={category} className="category-section">
+                <h3 className="category-title">{category}</h3>
+                <ul className="pantry-list">
+                  {categoryItems.map(it => (
+                    <li key={it.id} className="pantry-row">
+                      <div className="pantry-info">
+                        <strong>{it.name}</strong>
+                        <span className="muted">
+                          {it.quantity || 0} {it.unit || ""}
+                        </span>
+                      </div>
+                      <div className="row-actions">
+                        <button className="link" onClick={() => onEdit(it.id)}>Edit</button>
+                        <button className="link danger" onClick={() => onDelete(it.id)}>Delete</button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </section>
   );
 }

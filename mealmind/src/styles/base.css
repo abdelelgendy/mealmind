@@ -145,6 +145,33 @@ input:focus, select:focus { border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(14
   .pantry-form .btn { grid-column: span 1; }
 }
 
+/* Pantry categories */
+.pantry-categories {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.category-section {
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.category-title {
+  padding: 0.5rem 1rem;
+  margin: 0;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 8px 8px 0 0;
+}
+
+.empty-pantry {
+  text-align: center;
+  padding: 2rem;
+  background: #f9fafb;
+  border-radius: var(--radius);
+  border: 1px dashed #d1d5db;
+}
+
 /* Preferences form */
 .prefs-form {
   display: grid;
@@ -161,6 +188,18 @@ input:focus, select:focus { border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(14
 .field span { font-size: .9rem; color: var(--muted); }
 .field-wide { grid-column: 1 / -1; }
 .actions { grid-column: 1 / -1; display: flex; gap: .75rem; align-items: center; }
+.helper-text { 
+  font-size: 0.8rem; 
+  color: #6b7280; 
+  font-style: italic;
+  margin-top: 0.2rem;
+}
+
+/* Enhanced preferences form */
+.prefs-form {
+  background: linear-gradient(to bottom, #ffffff, #f9fafb);
+  box-shadow: var(--shadow);
+}
 
 /* ---------- recipe cards & search ---------- */
 .grid { display:grid; gap:1rem; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); }
@@ -483,6 +522,67 @@ input:focus, select:focus { border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(14
 }
 .recipe-details::-webkit-scrollbar-thumb:hover {
   background: #a1a1a1;
+}
+
+/* Preferences toggle in search */
+.preferences-toggle {
+  margin: 0.5rem 0 1rem;
+  padding: 0.8rem 1rem;
+  background: #f0f7ff;
+  border: 1px solid #cce3fe;
+  border-radius: 8px;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.toggle-label input {
+  margin-right: 0.5rem;
+}
+
+.applied-preferences {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.pref-tag {
+  display: inline-block;
+  padding: 0.3rem 0.6rem;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  background: #fff;
+}
+
+.diet-tag {
+  color: #0069db;
+  border: 1px solid #b3d7ff;
+}
+
+.cal-tag {
+  color: #b45309;
+  border: 1px solid #fcd34d;
+}
+
+.allergy-tag {
+  color: #be123c;
+  border: 1px solid #fda4af;
+}
+
+.time-tag {
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.size-tag {
+  color: #7c3aed;
+  border: 1px solid #c4b5fd;
 }
 
 /* Quick search section */
