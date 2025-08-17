@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { getMealPlan } from "../lib/supabase";
+import { getMealPlan, saveMealPlan, deleteMealPlan } from "../lib/supabase";
 import { supabase } from "../lib/supabase";
 
 // Constants
@@ -127,6 +127,40 @@ export function PlanProvider({ children }) {
     setPlan(emptyPlan()); 
   }
   
+  // Move a recipe from one slot to another
+  async function moveRecipe(fromDay, fromSlot, toDay, toSlot) {
+    try {
+      // Get the recipe being moved
+      const movingRecipe = plan[fromDay]?.[fromSlot];
+      if (!movingRecipe) return; // Nothing to move
+      
+      // If the destination has a recipe, we're essentially swapping
+      const destinationRecipe = plan[toDay]?.[toSlot];
+      
+      // Update local state first for immediate feedback
+      setCell(toDay, toSlot, movingRecipe);
+      setCell(fromDay, fromSlot, null);
+      
+      // If user is logged in, update Supabase
+      if (user) {
+        setSyncStatus("Moving recipe...");
+        
+        // Remove from old slot
+        await deleteMealPlan(user.id, fromDay, fromSlot);
+        
+        // Add to new slot
+        await saveMealPlan(user.id, toDay, toSlot, movingRecipe);
+        
+        setSyncStatus("Recipe moved");
+        setTimeout(() => setSyncStatus(""), 2000);
+      }
+    } catch (error) {
+      console.error("Error moving recipe:", error);
+      setSyncStatus("Error moving recipe");
+      setTimeout(() => setSyncStatus(""), 3000);
+    }
+  }
+  
   // Load user's meal plan from Supabase (useful for manual refresh)
   async function refreshPlan() {
     if (!user) return;
@@ -147,7 +181,8 @@ export function PlanProvider({ children }) {
       plan, 
       setCell, 
       clearCell, 
-      clearAll, 
+      clearAll,
+      moveRecipe,
       refreshPlan,
       DAYS, 
       SLOTS, 

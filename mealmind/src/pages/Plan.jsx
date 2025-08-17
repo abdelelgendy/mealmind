@@ -5,6 +5,10 @@ import { useAuth } from "../contexts/AuthContext";
 import { saveMealPlan, getMealPlan, deleteMealPlan, deleteAllMealPlans } from "../lib/supabase";
 import AddToPlanDialog from "../components/AddToPlanDialog";
 import MealTrackingSummary from "../components/MealTrackingSummary";
+import { useDrag, useDrop } from "react-dnd";
+
+// Define a type for drag and drop operations
+const ITEM_TYPE = "RECIPE";
 
 export default function Plan() {
   const { plan, setCell, clearCell, clearAll, DAYS, SLOTS, refreshPlan } = usePlan();
@@ -405,11 +409,60 @@ function FragmentRow({ slot, children }) {
 }
 
 function Cell({ day, slot, value, onEdit, onClear, trackingStatus, onTrackMeal }) {
+  const recipe = value ? { title: value } : null;
+  
   return (
-    <div className="plan-cell">
-      {value ? (
-        <div className="cell-filled">
-          <span className="title">{value}</span>
+    <PlanCell 
+      day={day} 
+      slot={slot} 
+      recipe={recipe} 
+      onEdit={onEdit}
+      onClear={onClear}
+      trackingStatus={trackingStatus}
+      onTrackMeal={onTrackMeal}
+    />
+  );
+}
+
+function PlanCell({ day, slot, recipe, onEdit, onClear, trackingStatus, onTrackMeal }) {
+  const { moveRecipe } = usePlan();
+  
+  // Configure drop target
+  const [{ isOver }, drop] = useDrop({
+    accept: ITEM_TYPE,
+    drop: (draggedItem) => {
+      // Only process if we're dropping onto a different cell
+      if (draggedItem.day !== day || draggedItem.slot !== slot) {
+        moveRecipe(draggedItem.day, draggedItem.slot, day, slot);
+      }
+    },
+    collect: monitor => ({
+      isOver: !!monitor.isOver()
+    })
+  });
+  
+  // Configure drag source (only if we have a recipe)
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: ITEM_TYPE,
+    item: { day, slot, recipe },
+    canDrag: !!recipe, // Only allow dragging if there's a recipe
+    collect: monitor => ({
+      isDragging: !!monitor.isDragging()
+    })
+  }), [day, slot, recipe]);
+  
+  return (
+    <div 
+      ref={drop} 
+      className={`plan-cell ${isOver ? "hover" : ""}`}
+    >
+      {recipe ? (
+        <div 
+          ref={drag} 
+          className={`cell-filled ${isDragging ? "dragging" : ""}`}
+          style={{ opacity: isDragging ? 0.5 : 1 }}
+        >
+          <span className="title">{recipe.title}</span>
           <div className="cell-actions">
             <button className="link" onClick={onEdit}>Edit</button>
             <button className="link danger" onClick={onClear}>Remove</button>

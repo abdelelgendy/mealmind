@@ -260,9 +260,21 @@ input:focus, select:focus { border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(14
 
 .cell-filled {
   display:flex; flex-direction:column; gap:.4rem; width:100%;
+  cursor: grab;
+  transition: opacity 0.2s ease;
 }
 .cell-filled .title { font-weight:600; }
 .cell-actions { display:flex; gap:.5rem; }
+
+/* Drag and Drop styles */
+.dragging { 
+  opacity: 0.5; 
+  cursor: grabbing;
+}
+.plan-cell.hover { 
+  border: 2px dashed #3b82f6; 
+  background-color: rgba(59, 130, 246, 0.05);
+}
 
 .plan-editor {
   margin-top: 1rem;
