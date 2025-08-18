@@ -1,8 +1,9 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { usePlan } from "../plan/PlanContext";
 import RecipeCard from "../components/RecipeCard";
-import { saveMealPlan } from "../lib/supabase";
+import { saveMealPlan, supabase } from "../lib/supabase";
 import { saveRecipeToCache } from "../lib/recipes";
 
 export default function Dashboard() {
@@ -17,6 +18,37 @@ export default function Dashboard() {
   
   // Count favorites
   const favoritesCount = favorites?.length || 0;
+  
+  // Supabase Realtime subscription for favorites changes
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase.channel('public:dashboard_favorites')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'favorites',
+          filter: `user_id=eq.${user.id}`
+        },
+        payload => {
+          console.log("Dashboard: Favorite change:", payload);
+
+          if (payload.eventType === "INSERT") {
+            setFavorites(prev => [...prev, payload.new]);
+          }
+          if (payload.eventType === "DELETE") {
+            setFavorites(prev => prev.filter(f => f.recipe_id !== payload.old.recipe_id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, setFavorites]);
   
   // Handle adding recipes to plan
   const addToPlan = async (recipe, day, slot) => {

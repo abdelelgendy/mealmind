@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { loadPantry, savePantry } from "../utils/storage";
 import { useAuth } from "../contexts/AuthContext";
-import { savePantry as saveUserPantry } from "../lib/supabase";
+import { savePantry as saveUserPantry, supabase } from "../lib/supabase";
 
 function uid() {
   return Math.random().toString(36).slice(2, 9);
@@ -20,6 +20,44 @@ export default function Pantry() {
       setItems(userPantry);
     }
   }, [user, userPantry]);
+  
+  // Supabase Realtime subscription for pantry changes
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase.channel('public:pantry')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'pantry',
+          filter: `user_id=eq.${user.id}`
+        },
+        payload => {
+          console.log("Pantry change:", payload);
+          if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
+            setItems(prev => {
+              const index = prev.findIndex(i => i.id === payload.new.id);
+              if (index >= 0) {
+                const copy = [...prev];
+                copy[index] = payload.new;
+                return copy;
+              } else return [...prev, payload.new];
+            });
+          }
+
+          if (payload.eventType === "DELETE") {
+            setItems(prev => prev.filter(i => i.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   // persist on change
   useEffect(() => { 

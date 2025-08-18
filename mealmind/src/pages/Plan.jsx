@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { usePlan } from "../plan/PlanContext";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { saveMealPlan, getMealPlan, deleteMealPlan, deleteAllMealPlans } from "../lib/supabase";
+import { saveMealPlan, getMealPlan, deleteMealPlan, deleteAllMealPlans, supabase } from "../lib/supabase";
 import AddToPlanDialog from "../components/AddToPlanDialog";
 import MealTrackingSummary from "../components/MealTrackingSummary";
 import { useDrag, useDrop } from "react-dnd";
@@ -71,6 +71,45 @@ export default function Plan() {
     };
   }, [user, navigate]);
   
+  // Subscribe to meal_plans changes with Supabase Realtime
+  useEffect(() => {
+    if (!user) return;
+
+    // Subscribe to meal_plans changes
+    const channel = supabase.channel('public:meal_plans')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'meal_plans',
+          filter: `user_id=eq.${user.id}`
+        },
+        payload => {
+          console.log("Meal plan change:", payload);
+
+          if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
+            const { day, slot, recipe_id, title, image } = payload.new;
+            if (day && slot) { // Make sure we have valid day and slot
+              setCell(day, slot, { id: recipe_id, title, image });
+            }
+          }
+
+          if (payload.eventType === "DELETE") {
+            const { day, slot } = payload.old;
+            if (day && slot) { // Make sure we have valid day and slot
+              setCell(day, slot, null);
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, setCell]);
+  
   function startEdit(day, slot) {
     setEditing({ day, slot });
     setText(plan[day]?.[slot]?.title ?? "");
@@ -79,11 +118,6 @@ export default function Plan() {
   function openAddRecipeDialog(day, slot) {
     setEditing({ day, slot });
     setOpenDialog(true);
-  } // Only depend on user, not refreshUserData
-
-  function startEdit(day, slot) {
-    setEditing({ day, slot });
-    setText(plan[day][slot]?.title ?? "");
   }
   
   async function saveEdit() {

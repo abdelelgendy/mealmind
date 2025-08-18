@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { removeFromFavorites, saveMealPlan } from "../lib/supabase";
+import { useState, useEffect } from "react";
+import { removeFromFavorites, saveMealPlan, supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
 import { usePlan } from "../plan/PlanContext";
 import RecipeCard from "../components/RecipeCard";
@@ -12,6 +12,37 @@ export default function Favorites() {
   const { user, favorites, setFavorites, loading } = useAuth();
   const { setCell } = usePlan();
   const [error, setError] = useState(null);
+  
+  // Supabase Realtime subscription for favorites changes
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase.channel('public:favorites')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'favorites',
+          filter: `user_id=eq.${user.id}`
+        },
+        payload => {
+          console.log("Favorite change:", payload);
+
+          if (payload.eventType === "INSERT") {
+            setFavorites(prev => [...prev, payload.new]);
+          }
+          if (payload.eventType === "DELETE") {
+            setFavorites(prev => prev.filter(f => f.recipe_id !== payload.old.recipe_id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, setFavorites]);
 
   // Handle favorite toggling (removal in this case)
   const handleFavoriteToggle = async (recipe, isFavorite) => {
