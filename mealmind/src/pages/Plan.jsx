@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { usePlan } from "../plan/PlanContext";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
@@ -71,6 +71,13 @@ export default function Plan() {
     };
   }, [user, navigate]);
   
+  // We'll use a ref to track if we're performing an operation that will trigger a realtime update
+  // This helps prevent duplicate updates
+  const isPerformingOperation = useRef(false);
+  
+  // Flag to indicate if we're handling an externally triggered update
+  const [isExternalUpdate, setIsExternalUpdate] = useState(false);
+
   // Subscribe to meal_plans changes with Supabase Realtime
   useEffect(() => {
     if (!user) return;
@@ -87,7 +94,15 @@ export default function Plan() {
         },
         payload => {
           console.log("Meal plan change:", payload);
-
+          
+          // If we're the ones who initiated this change, don't update again
+          if (isPerformingOperation.current) {
+            console.log("Ignoring real-time update as we initiated it");
+            return;
+          }
+          
+          setIsExternalUpdate(true);
+          
           if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
             const { day, slot, recipe_id, title, image } = payload.new;
             if (day && slot) { // Make sure we have valid day and slot
@@ -101,6 +116,9 @@ export default function Plan() {
               setCell(day, slot, null);
             }
           }
+          
+          // Reset the external update flag after a short delay
+          setTimeout(() => setIsExternalUpdate(false), 500);
         }
       )
       .subscribe();
@@ -137,12 +155,22 @@ export default function Plan() {
         
         // If the user is logged in, save to Supabase first
         if (user) {
+          // Mark that we're performing an operation that will trigger a real-time update
+          isPerformingOperation.current = true;
+          
           await saveMealPlan(user.id, day, slot, newRecipe);
           console.log(`Recipe ${title} saved to ${day} ${slot} for user ${user.id}`);
           setSyncStatus("Recipe saved to your account");
           
-          // Refresh user data to keep everything in sync
-          await refreshUserData();
+          // Update local state for immediate feedback if we're not receiving real-time updates
+          if (!isExternalUpdate) {
+            setCell(day, slot, newRecipe);
+          }
+          
+          // Reset the operation flag after a delay
+          setTimeout(() => {
+            isPerformingOperation.current = false;
+          }, 1000);
         } else {
           // For guests, just update local state
           setCell(day, slot, newRecipe);
@@ -151,10 +179,25 @@ export default function Plan() {
       } else {
         // Empty title means remove
         if (user) {
+          // Mark that we're performing an operation that will trigger a real-time update
+          isPerformingOperation.current = true;
+          
           await deleteMealPlan(user.id, day, slot);
-          await refreshUserData();
+          setSyncStatus("Recipe removed");
+          
+          // Update local state for immediate feedback if we're not receiving real-time updates
+          if (!isExternalUpdate) {
+            setCell(day, slot, null);
+          }
+          
+          // Reset the operation flag after a delay
+          setTimeout(() => {
+            isPerformingOperation.current = false;
+          }, 1000);
+        } else {
+          // For guests, just update local state
+          setCell(day, slot, null);
         }
-        setCell(day, slot, null);
       }
       
       setEditing(null);
@@ -178,22 +221,31 @@ export default function Plan() {
       // If user is logged in, delete from Supabase first
       if (user) {
         setSyncStatus("Removing recipe...");
+        
+        // Mark that we're performing an operation that will trigger a real-time update
+        isPerformingOperation.current = true;
+        
         await deleteMealPlan(user.id, day, slot);
         console.log(`Recipe removed from ${day} ${slot} for user ${user.id}`);
         setSyncStatus("Recipe removed");
+        
+        // Update local state for immediate feedback if we're not receiving real-time updates
+        if (!isExternalUpdate) {
+          clearCell(day, slot);
+        }
+        
+        // Reset the operation flag after a delay
+        setTimeout(() => {
+          isPerformingOperation.current = false;
+        }, 1000);
+      } else {
+        // For guests, just update local state
+        clearCell(day, slot);
       }
-      
-      // Then update local state
-      clearCell(day, slot);
       
       if (editing?.day === day && editing?.slot === slot) {
         setEditing(null);
         setText("");
-      }
-      
-      // If user is logged in, refresh their data to keep everything in sync
-      if (user) {
-        await refreshUserData();
       }
       
     } catch (error) {
@@ -217,16 +269,26 @@ export default function Plan() {
     
     try {
       if (user) {
+        // Mark that we're performing an operation that will trigger a real-time update
+        isPerformingOperation.current = true;
+        
         await deleteAllMealPlans(user.id);
         console.log(`All recipes cleared for user ${user.id}`);
-        
-        // Refresh user data to keep everything in sync
-        await refreshUserData();
         setSyncStatus("Meal plan cleared");
+        
+        // Update local state for immediate feedback if we're not receiving real-time updates
+        if (!isExternalUpdate) {
+          clearAll();
+        }
+        
+        // Reset the operation flag after a delay
+        setTimeout(() => {
+          isPerformingOperation.current = false;
+        }, 1000);
+      } else {
+        // For guests, just update local state
+        clearAll();
       }
-      
-      // Always clear local state
-      clearAll();
     } catch (error) {
       console.error("Error clearing meal plan:", error);
       setSyncStatus("Error clearing meal plan");
@@ -460,6 +522,45 @@ function Cell({ day, slot, value, onEdit, onClear, trackingStatus, onTrackMeal }
 
 function PlanCell({ day, slot, recipe, onEdit, onClear, trackingStatus, onTrackMeal }) {
   const { moveRecipe } = usePlan();
+  const { user } = useAuth();
+  
+  // Function to handle recipe movement with database sync
+  async function handleMoveRecipe(fromDay, fromSlot, toDay, toSlot) {
+    try {
+      // Get the recipe being moved
+      const movingRecipe = plan[fromDay]?.[fromSlot];
+      if (!movingRecipe) return; // Nothing to move
+      
+      // Call the moveRecipe function from PlanContext to update local state
+      moveRecipe(fromDay, fromSlot, toDay, toSlot);
+      
+      // If user is logged in, update Supabase
+      if (user) {
+        setSyncStatus("Moving recipe...");
+        
+        // Mark that we're performing an operation that will trigger a real-time update
+        isPerformingOperation.current = true;
+        
+        // Remove from old slot
+        await deleteMealPlan(user.id, fromDay, fromSlot);
+        
+        // Add to new slot
+        await saveMealPlan(user.id, toDay, toSlot, movingRecipe);
+        
+        setSyncStatus("Recipe moved");
+        
+        // Reset the operation flag after a delay
+        setTimeout(() => {
+          isPerformingOperation.current = false;
+          setSyncStatus("");
+        }, 1000);
+      }
+    } catch (error) {
+      console.error("Error moving recipe:", error);
+      setSyncStatus("Error moving recipe");
+      setTimeout(() => setSyncStatus(""), 3000);
+    }
+  }
   
   // Configure drop target
   const [{ isOver }, drop] = useDrop({
@@ -467,7 +568,7 @@ function PlanCell({ day, slot, recipe, onEdit, onClear, trackingStatus, onTrackM
     drop: (draggedItem) => {
       // Only process if we're dropping onto a different cell
       if (draggedItem.day !== day || draggedItem.slot !== slot) {
-        moveRecipe(draggedItem.day, draggedItem.slot, day, slot);
+        handleMoveRecipe(draggedItem.day, draggedItem.slot, day, slot);
       }
     },
     collect: monitor => ({

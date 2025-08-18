@@ -59,37 +59,11 @@ export function PlanProvider({ children }) {
     }
   }, [user]);
   
-  // Set up real-time subscription to meal plan changes
+  // Real-time subscription is now handled directly in Plan.jsx
+  // We remove this subscription to avoid duplicate updates
   useEffect(() => {
     if (!user) return;
-    
-    setSyncStatus("Connecting to real-time updates...");
-    
-    // Subscribe to changes on the meal_plans table for this user
-    const subscription = supabase
-      .channel('meal_plans_changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'meal_plans',
-        filter: `user_id=eq.${user.id}`
-      }, (payload) => {
-        console.log('Real-time update received:', payload);
-        setSyncStatus("Syncing changes...");
-        
-        // Refresh the plan data when changes are detected
-        refreshPlan();
-      })
-      .subscribe((status) => {
-        console.log('Subscription status:', status);
-        if (status === 'SUBSCRIBED') {
-          setSyncStatus("Connected to real-time updates");
-        }
-      });
-      
-    return () => {
-      subscription.unsubscribe();
-    };
+    setSyncStatus("Connected to real-time updates");
   }, [user]);
   
   // When the user changes or userMealPlan changes, update the plan
@@ -127,35 +101,20 @@ export function PlanProvider({ children }) {
     setPlan(emptyPlan()); 
   }
   
-  // Move a recipe from one slot to another
-  async function moveRecipe(fromDay, fromSlot, toDay, toSlot) {
+  // Move a recipe from one slot to another - the actual move operation is handled in Plan.jsx
+  // This function only updates the local plan state
+  function moveRecipe(fromDay, fromSlot, toDay, toSlot) {
     try {
       // Get the recipe being moved
       const movingRecipe = plan[fromDay]?.[fromSlot];
       if (!movingRecipe) return; // Nothing to move
       
-      // If the destination has a recipe, we're essentially swapping
-      const destinationRecipe = plan[toDay]?.[toSlot];
-      
-      // Update local state first for immediate feedback
+      // Update local state for immediate feedback
       setCell(toDay, toSlot, movingRecipe);
       setCell(fromDay, fromSlot, null);
       
-      // If user is logged in, update Supabase
-      if (user) {
-        setSyncStatus("Moving recipe...");
-        
-        // Remove from old slot
-        await deleteMealPlan(user.id, fromDay, fromSlot);
-        
-        // Add to new slot
-        await saveMealPlan(user.id, toDay, toSlot, movingRecipe);
-        
-        setSyncStatus("Recipe moved");
-        setTimeout(() => setSyncStatus(""), 2000);
-      }
     } catch (error) {
-      console.error("Error moving recipe:", error);
+      console.error("Error moving recipe in local state:", error);
       setSyncStatus("Error moving recipe");
       setTimeout(() => setSyncStatus(""), 3000);
     }
