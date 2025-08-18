@@ -30,6 +30,7 @@ export default function Header() {
         <NavLink to="/pantry">Pantry</NavLink>
         <NavLink to="/plan">Meal Plan</NavLink>
         <NavLink to="/search">Search</NavLink>
+        <NavLink to="/favorites">Favorites</NavLink>
         {user ? (
           <>
             <NavLink to="/profile">Profile</NavLink>

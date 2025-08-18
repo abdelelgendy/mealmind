@@ -5,6 +5,7 @@ import Plan from "../pages/Plan.jsx";
 import Preferences from "../pages/Preferences.jsx";
 import Profile from "../pages/Profile.jsx";
 import Search from "../pages/Search.jsx";
+import Favorites from "../pages/Favorites.jsx";
 import SignUp from "../pages/SignUp.jsx";
 import LogIn from "../pages/LogIn.jsx";
 import ProtectedRoute from "../components/ProtectedRoute.jsx";
@@ -53,6 +54,14 @@ export default function AppRoutes() {
         } 
       />
       <Route path="/search" element={<Search />} />
+      <Route 
+        path="/favorites" 
+        element={
+          <ProtectedRoute>
+            <Favorites />
+          </ProtectedRoute>
+        } 
+      />
       <Route path="/signup" element={<SignUp />} />
       <Route path="/login" element={<LogIn />} />
       <Route path="*" element={<Navigate to="/" />} />

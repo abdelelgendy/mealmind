@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { supabase, getCurrentUser, getProfile, getPantry, getMealPlan, logOut } from "../lib/supabase";
+import { supabase, getCurrentUser, getProfile, getPantry, getMealPlan, logOut, getFavorites } from "../lib/supabase";
 
 const AuthContext = createContext(null);
 
@@ -10,23 +10,26 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null);
   const [pantry, setPantry] = useState([]);
   const [mealPlan, setMealPlan] = useState([]);
+  const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch user's data (profile, pantry, meal plan)
+  // Fetch user's data (profile, pantry, meal plan, favorites)
   const fetchUserData = async (userId) => {
     if (!userId) return false;
     
     try {
-      const [userProfile, userPantry, userMealPlan] = await Promise.all([
+      const [userProfile, userPantry, userMealPlan, userFavorites] = await Promise.all([
         getProfile(userId),
         getPantry(userId),
-        getMealPlan(userId)
+        getMealPlan(userId),
+        getFavorites(userId)
       ]);
 
       setProfile(userProfile);
       setPantry(userPantry || []);
       setMealPlan(userMealPlan || []);
+      setFavorites(userFavorites || []);
       return true;
     } catch (error) {
       console.error("Error fetching user data:", error);
@@ -42,6 +45,7 @@ export function AuthProvider({ children }) {
       setProfile(null);
       setPantry([]);
       setMealPlan([]);
+      setFavorites([]);
     } catch (error) {
       console.error("Error logging out:", error);
     }
@@ -125,6 +129,7 @@ export function AuthProvider({ children }) {
           setProfile(null);
           setPantry([]);
           setMealPlan([]);
+          setFavorites([]);
         }
         
         clearTimeout(safetyTimeout);
@@ -151,6 +156,8 @@ export function AuthProvider({ children }) {
     setPantry,
     mealPlan,
     setMealPlan,
+    favorites,
+    setFavorites,
     loading,
     error,
     isAuthenticated: !!user,

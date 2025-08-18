@@ -3,11 +3,11 @@ import RecipeGrid from "../components/RecipeGrid";
 import { searchRecipes, saveRecipeToCache } from "../lib/recipes";
 import { usePlan } from "../plan/PlanContext";
 import { useAuth } from "../contexts/AuthContext";
-import { saveMealPlan, getFavorites, addToFavorites, removeFromFavorites } from "../lib/supabase";
+import { saveMealPlan } from "../lib/supabase";
 
 export default function Search() {
   const { setCell } = usePlan(); // we need to update Plan when adding recipe
-  const { user, profile } = useAuth(); // Get the current user and profile for preferences
+  const { user, profile, favorites, setFavorites } = useAuth(); // Get the current user, profile, and favorites
   const [query, setQuery] = useState("");
   const [diet, setDiet] = useState("");
   const [maxCals, setMaxCals] = useState("");
@@ -15,7 +15,6 @@ export default function Search() {
   const [status, setStatus] = useState("featured"); // idle | loading | error | success | featured
   const [error, setError] = useState(null);
   const [featuredRecipes, setFeaturedRecipes] = useState([]);
-  const [favorites, setFavorites] = useState([]);
   const [usePreferences, setUsePreferences] = useState(true);
   
   // debounce
@@ -25,7 +24,7 @@ export default function Search() {
     return () => clearTimeout(t);
   }, [query]);
 
-  // Load featured recipes, user favorites, and apply user preferences on page load
+  // Load featured recipes and apply user preferences on page load
   useEffect(() => {
     async function loadData() {
       try {
@@ -38,20 +37,14 @@ export default function Search() {
         });
         setFeaturedRecipes(featured);
         
-        // Load user favorites if logged in
-        if (user) {
-          const userFavorites = await getFavorites(user.id);
-          setFavorites(userFavorites || []);
-          
-          // Apply user preferences if available
-          if (profile && profile.preferences && usePreferences) {
-            const userPrefs = profile.preferences;
-            if (userPrefs.diet) {
-              setDiet(userPrefs.diet);
-            }
-            if (userPrefs.calories) {
-              setMaxCals(userPrefs.calories);
-            }
+        // Apply user preferences if available
+        if (profile && profile.preferences && usePreferences) {
+          const userPrefs = profile.preferences;
+          if (userPrefs.diet) {
+            setDiet(userPrefs.diet);
+          }
+          if (userPrefs.calories) {
+            setMaxCals(userPrefs.calories);
           }
         }
         
@@ -207,26 +200,28 @@ export default function Search() {
   };
   
   // Handle favorite toggle
-  const handleFavoriteToggle = async (recipe, isFavorite) => {
+  const handleFavoriteToggle = (recipe, isFavorite) => {
     if (!user) return;
     
-    try {
-      if (isFavorite) {
-        await addToFavorites(user.id, recipe);
-        // Update local favorites list
-        setFavorites(prev => [...prev, { 
+    // The RecipeCard component already handles the API calls to add/remove favorites
+    // Here we just update our local state to stay in sync with the RecipeCard state
+    if (isFavorite) {
+      // Recipe was added to favorites
+      setFavorites(prev => {
+        // Check if it's already in favorites to avoid duplicates
+        if (prev.some(fav => fav.recipe_id === recipe.id)) {
+          return prev;
+        }
+        return [...prev, { 
           user_id: user.id,
           recipe_id: recipe.id,
           title: recipe.title,
           image: recipe.image
-        }]);
-      } else {
-        await removeFromFavorites(user.id, recipe.id);
-        // Update local favorites list
-        setFavorites(prev => prev.filter(f => f.recipe_id !== recipe.id));
-      }
-    } catch (error) {
-      console.error("Error updating favorites:", error);
+        }];
+      });
+    } else {
+      // Recipe was removed from favorites
+      setFavorites(prev => prev.filter(f => f.recipe_id !== recipe.id));
     }
   };
 

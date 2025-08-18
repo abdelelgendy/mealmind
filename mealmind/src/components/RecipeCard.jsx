@@ -64,7 +64,7 @@ export default function RecipeCard({ recipe, onAddToPlan, favorites = [], onFavo
           disabled={favoriteLoading}
           aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
         >
-          {isFavorite ? '★' : '☆'}
+          {favoriteLoading ? '•' : isFavorite ? '♥' : '♡'}
         </button>
       </div>
       <div className="card-body">

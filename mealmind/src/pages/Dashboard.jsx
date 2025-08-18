@@ -1,16 +1,52 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { usePlan } from "../plan/PlanContext";
+import RecipeCard from "../components/RecipeCard";
+import { saveMealPlan } from "../lib/supabase";
+import { saveRecipeToCache } from "../lib/recipes";
 
 export default function Dashboard() {
-  const { user, profile, pantry, mealPlan, loading } = useAuth();
-  const { DAYS } = usePlan();
+  const { user, profile, pantry, mealPlan, loading, favorites, setFavorites } = useAuth();
+  const { DAYS, setCell } = usePlan();
   
   // Count meals planned for the week
   const mealCount = mealPlan?.length || 0;
   
   // Count pantry items
   const pantryCount = pantry?.length || 0;
+  
+  // Count favorites
+  const favoritesCount = favorites?.length || 0;
+  
+  // Handle adding recipes to plan
+  const addToPlan = async (recipe, day, slot) => {
+    try {
+      // First save the recipe to Supabase cache
+      await saveRecipeToCache(recipe);
+      
+      // If user is logged in, save to their meal plan in Supabase
+      if (user) {
+        const recipeData = { 
+          id: recipe.id, 
+          title: recipe.title
+        };
+        
+        await saveMealPlan(user.id, day, slot, recipeData);
+        console.log(`Recipe added to ${day} ${slot} for user ${user.id}`);
+      }
+      
+      // Always update the local plan context
+      setCell(day, slot, { id: recipe.id, title: recipe.title });
+      
+      return true;
+    } catch (error) {
+      console.error("Failed to add recipe to plan:", error);
+      // Even if the Supabase operation fails, update the local plan
+      // so the UI is responsive
+      setCell(day, slot, { id: recipe.id, title: recipe.title });
+      throw error;
+    }
+  };
   
   // Get username for personalization
   const username = profile?.username || user?.email?.split('@')[0] || "there";
@@ -64,6 +100,37 @@ export default function Dashboard() {
         )}
       </div>
       
+      {/* Favorite Recipes Section */}
+      {user && favorites && favorites.length > 0 && (
+        <div className="favorite-recipes-section">
+          <div className="section-header">
+            <h3>Your Favorite Recipes</h3>
+            <Link to="/favorites" className="btn-link">See All ({favoritesCount})</Link>
+          </div>
+          
+          <div className="favorite-recipes-grid">
+            {favorites.slice(0, 4).map(favorite => (
+              <RecipeCard
+                key={favorite.recipe_id}
+                recipe={{
+                  id: favorite.recipe_id,
+                  title: favorite.title,
+                  image: favorite.image
+                }}
+                favorites={favorites}
+                onFavoriteToggle={(recipe, isFavorite) => {
+                  // Update local state to stay in sync
+                  if (!isFavorite) {
+                    setFavorites(prev => prev.filter(f => f.recipe_id !== recipe.id));
+                  }
+                }}
+                onAddToPlan={addToPlan}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+      
       {/* Quick start tips */}
       <div className="tips-section">
         <h3>Quick Tips</h3>
@@ -71,6 +138,7 @@ export default function Dashboard() {
           <li>Add ingredients to your <Link to="/pantry">pantry</Link> to keep track of what you have on hand.</li>
           <li>Plan your meals for the week in the <Link to="/plan">meal plan</Link> section.</li>
           <li><Link to="/search">Search for recipes</Link> based on your pantry ingredients or preferences.</li>
+          <li>Save your favorite recipes by clicking the heart icon, and find them in your <Link to="/favorites">favorites</Link>.</li>
         </ul>
       </div>
     </section>
