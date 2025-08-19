@@ -19,6 +19,7 @@ export function AuthProvider({ children }) {
     if (!userId) return false;
     
     try {
+      console.log("Fetching user data for:", userId);
       const [userProfile, userPantry, userMealPlan, userFavorites] = await Promise.all([
         getProfile(userId),
         getPantry(userId),
@@ -26,6 +27,7 @@ export function AuthProvider({ children }) {
         getFavorites(userId)
       ]);
 
+      console.log("User data fetched successfully");
       setProfile(userProfile);
       setPantry(userPantry || []);
       setMealPlan(userMealPlan || []);

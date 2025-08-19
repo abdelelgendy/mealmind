@@ -1,0 +1,158 @@
+.recipe-card {
+  position: relative;
+  transition: all 0.3s ease;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Pantry compatibility styling */
+.recipe-card.pantry-full {
+  border: 2px solid #34d399 !important; /* Green border for fully compatible recipes */
+  box-shadow: 0 4px 12px rgba(52, 211, 153, 0.2) !important;
+}
+
+.recipe-card.pantry-partial {
+  border: 2px solid #fbbf24 !important; /* Yellow border for partially compatible recipes */
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.2) !important;
+}
+
+.recipe-card.pantry-missing {
+  opacity: 0.85;
+}
+
+.compatibility-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.badge {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-weight: 600;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pantry-badge {
+  background-color: #d1fae5;
+  color: #047857;
+  border: 1px solid #34d399;
+}
+
+.missing-badge {
+  background-color: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fbbf24;
+}
+
+.allergen-badge {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #ef4444;
+}
+
+.diet-badge {
+  background-color: #e0f2fe;
+  color: #075985;
+  border: 1px solid #38bdf8;
+}
+
+/* Calorie status */
+.calories {
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: #6b7280;
+}
+
+.calorie-exceeded {
+  color: #b91c1c;
+}
+
+.calorie-diff {
+  margin-left: 4px;
+  font-weight: 500;
+}
+
+/* Ingredient substitutions */
+.ingredient-substitutions {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #f3f4f6;
+  border-radius: 8px;
+}
+
+.substitutions-list {
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+}
+
+.muted {
+  color: #6b7280;
+}
+
+/* Sort controls */
+.filter-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  align-items: center;
+}
+
+.filter-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filter-control input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+}
+
+.filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.filter-group label {
+  margin: 0;
+}
+
+.filter-divider {
+  height: 1.5rem;
+  width: 1px;
+  background-color: #d1d5db;
+  margin: 0 0.5rem;
+}
+
+/* Expanded recipe card for pantry visualization */
+.missing-ingredients {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background-color: #fef3c7;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+.missing-ingredient-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.missing-ingredient-item:last-child {
+  margin-bottom: 0;
+}

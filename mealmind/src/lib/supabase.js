@@ -2,16 +2,30 @@ import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
-export const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Create a safe Supabase client even if env vars are missing
+export const supabase = supabaseUrl && supabaseKey 
+  ? createClient(supabaseUrl, supabaseKey)
+  : null;
 
 export async function testConnection() {
-  const { data, error } = await supabase.from('recipes_cache').select('*').limit(1);
-  if (error) {
-    console.error("Error connecting to Supabase:", error);
+  if (!supabase) {
+    console.warn("Supabase client not initialized - missing environment variables");
     return false;
   }
-  console.log("Supabase connection successful:", data);
-  return true;
+  
+  try {
+    const { data, error } = await supabase.from('recipes_cache').select('*').limit(1);
+    if (error) {
+      console.error("Error connecting to Supabase:", error);
+      return false;
+    }
+    console.log("Supabase connection successful:", data);
+    return true;
+  } catch (err) {
+    console.error("Failed to test Supabase connection:", err);
+    return false;
+  }
 }
 
 // Sign up with email and password

@@ -2,7 +2,7 @@ import { supabase } from "./supabase";
 
 const API = 'https://api.spoonacular.com';
 
-const KEY = import.meta.env.VITE_SPOONACULAR_KEY;
+const KEY = import.meta.env.VITE_SPOONACULAR_KEY || import.meta.env.VITE_SPOONACULAR_API_KEY;
 
 // simple in-memory cache to avoid duplicate calls during the session
 const memory = new Map();
@@ -16,6 +16,11 @@ function qs(params) {
 }
 
 export async function searchRecipes({ query, maxCalories, diet, number = 20, signal }) {
+  if (!KEY) {
+    console.warn("Spoonacular API key not found - returning mock data");
+    return getMockRecipes();
+  }
+  
   const params = {
     apiKey: KEY,
     query,
@@ -294,7 +299,7 @@ export async function testInsert() {
 }
 
 export async function removeRecipeFromCache(recipeId) {
-  if (!recipeId) return null;
+  if (!recipeId || !supabase) return null;
   
   const { data, error } = await supabase
     .from("recipes_cache")
@@ -307,4 +312,34 @@ export async function removeRecipeFromCache(recipeId) {
   }
   
   return data;
+}
+
+// Mock data for development when API keys are not available
+function getMockRecipes() {
+  return [
+    {
+      id: 1,
+      title: "Mock Grilled Chicken",
+      image: "https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=400",
+      calories: 350,
+      readyInMinutes: 25,
+      ingredients: [
+        { name: "chicken breast", amount: 1, unit: "piece" },
+        { name: "olive oil", amount: 2, unit: "tbsp" },
+        { name: "salt", amount: 1, unit: "tsp" }
+      ]
+    },
+    {
+      id: 2,
+      title: "Mock Vegetable Salad",
+      image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400",
+      calories: 180,
+      readyInMinutes: 10,
+      ingredients: [
+        { name: "lettuce", amount: 2, unit: "cups" },
+        { name: "tomatoes", amount: 1, unit: "cup" },
+        { name: "cucumber", amount: 1, unit: "medium" }
+      ]
+    }
+  ];
 }

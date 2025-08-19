@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import RecipeGrid from "../components/RecipeGrid";
-import { searchRecipes, saveRecipeToCache } from "../lib/recipes";
+// import SmartRecipeGrid from "../components/SmartRecipeGrid";
+import { searchRecipes, saveRecipeToCache, getRecipeById } from "../lib/recipes";
 import { usePlan } from "../plan/PlanContext";
 import { useAuth } from "../contexts/AuthContext";
 import { saveMealPlan } from "../lib/supabase";
+// import { useSmartFiltering } from "../hooks/useSmartFiltering";
 
 export default function Search() {
   const { setCell } = usePlan(); // we need to update Plan when adding recipe
-  const { user, profile, favorites, setFavorites } = useAuth(); // Get the current user, profile, and favorites
+  const { user, profile, favorites, setFavorites, pantry } = useAuth(); // Get the current user, profile, favorites, and pantry
   const [query, setQuery] = useState("");
   const [diet, setDiet] = useState("");
   const [maxCals, setMaxCals] = useState("");
@@ -16,6 +18,15 @@ export default function Search() {
   const [error, setError] = useState(null);
   const [featuredRecipes, setFeaturedRecipes] = useState([]);
   const [usePreferences, setUsePreferences] = useState(true);
+  const [enableSmartFiltering, setEnableSmartFiltering] = useState(true);
+  const [showSubstitutions, setShowSubstitutions] = useState(false);
+  
+  // Smart filtering options
+  const [filterOptions, setFilterOptions] = useState({
+    enablePantryFiltering: true,
+    enableDietaryFiltering: true,
+    enableCalorieFiltering: true
+  });
   
   // debounce
   const [debounced, setDebounced] = useState(query);
@@ -225,6 +236,28 @@ export default function Search() {
     }
   };
 
+  // Use smart filtering hook to process recipes based on user's pantry and preferences
+  // const { filteredRecipes, loading: smartFilteringLoading } = useSmartFiltering(
+  //   results.length > 0 ? results : featuredRecipes, 
+  //   {
+  //     ...filterOptions,
+  //     enablePantryFiltering: filterOptions.enablePantryFiltering,
+  //     enableDietaryFiltering: filterOptions.enableDietaryFiltering,
+  //     enableCalorieFiltering: filterOptions.enableCalorieFiltering
+  //   }
+  // );
+  
+  // Temporary fix - use regular results
+  const filteredRecipes = results.length > 0 ? results : featuredRecipes;
+
+  // Toggle filter options
+  const handleFilterOptionChange = (option, value) => {
+    setFilterOptions(prev => ({
+      ...prev,
+      [option]: value
+    }));
+  };
+  
   return (
     <section className="container">
       <h1>Search Recipes</h1>
@@ -237,6 +270,73 @@ export default function Search() {
         />
         <button className="btn" onClick={() => setDebounced(query)}>Search</button>
       </form>
+
+      {user && (
+        <div className="filter-controls">
+          <div className="filter-control">
+            <label>
+              <input 
+                type="checkbox" 
+                checked={enableSmartFiltering}
+                onChange={(e) => setEnableSmartFiltering(e.target.checked)}
+              />
+              <span>Enable Smart Filtering</span>
+            </label>
+          </div>
+          
+          {enableSmartFiltering && (
+            <div className="filter-group">
+              <div className="filter-divider"></div>
+              
+              <div className="filter-control">
+                <label>
+                  <input 
+                    type="checkbox"
+                    checked={filterOptions.enablePantryFiltering}
+                    onChange={(e) => handleFilterOptionChange('enablePantryFiltering', e.target.checked)}
+                  />
+                  <span>Pantry Match</span>
+                </label>
+              </div>
+              
+              <div className="filter-control">
+                <label>
+                  <input 
+                    type="checkbox"
+                    checked={filterOptions.enableDietaryFiltering}
+                    onChange={(e) => handleFilterOptionChange('enableDietaryFiltering', e.target.checked)}
+                  />
+                  <span>Diet & Allergies</span>
+                </label>
+              </div>
+              
+              <div className="filter-control">
+                <label>
+                  <input 
+                    type="checkbox"
+                    checked={filterOptions.enableCalorieFiltering}
+                    onChange={(e) => handleFilterOptionChange('enableCalorieFiltering', e.target.checked)}
+                  />
+                  <span>Calorie Target</span>
+                </label>
+              </div>
+              
+              <div className="filter-divider"></div>
+              
+              <div className="filter-control">
+                <label>
+                  <input 
+                    type="checkbox"
+                    checked={showSubstitutions}
+                    onChange={(e) => setShowSubstitutions(e.target.checked)}
+                  />
+                  <span>Show Substitutions</span>
+                </label>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {user && profile && profile.preferences && (
         <div className="preferences-toggle">
