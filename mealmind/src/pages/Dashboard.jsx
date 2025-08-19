@@ -21,7 +21,7 @@ export default function Dashboard() {
   
   // Supabase Realtime subscription for favorites changes
   useEffect(() => {
-    if (!user) return;
+    if (!user || !supabase) return;
 
     const channel = supabase.channel('public:dashboard_favorites')
       .on(
@@ -46,7 +46,7 @@ export default function Dashboard() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      try { supabase.removeChannel(channel); } catch {}
     };
   }, [user, setFavorites]);
   

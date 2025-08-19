@@ -136,7 +136,12 @@ export function AuthProvider({ children }) {
     
     checkUser();
     
-    // Listen for auth state changes
+    // Listen for auth state changes (only if Supabase is initialized)
+    if (!supabase || !supabase.auth) {
+      console.warn("AuthContext: Supabase not initialized - skipping auth state subscription");
+      return;
+    }
+
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log("AuthContext: Auth state changed:", event);
@@ -181,8 +186,12 @@ export function AuthProvider({ children }) {
     );
     
     return () => {
-      if (authListener && authListener.subscription) {
-        authListener.subscription.unsubscribe();
+      try {
+        if (authListener && authListener.subscription) {
+          authListener.subscription.unsubscribe();
+        }
+      } catch (e) {
+        // no-op
       }
     };
   }, []);

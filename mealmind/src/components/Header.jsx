@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { logOut } from "../lib/supabase";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../contexts/AuthContext.jsx";
 
 export default function Header() {
   const [open, setOpen] = useState(false);
@@ -24,7 +24,7 @@ export default function Header() {
       <nav
         id="site-menu"
         className={`nav ${open ? "is-open" : ""}`}
-        onClick={() => setOpen(false)}  // close after clicking a link
+        onClick={() => setOpen(false)}
       >
         <NavLink to="/" end>Home</NavLink>
         <NavLink to="/pantry">Pantry</NavLink>

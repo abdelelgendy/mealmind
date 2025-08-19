@@ -8,11 +8,14 @@ import './styles/plan-styles.css'
 import './styles/recipe-styles.css'
 import './styles/smart-recipes.css'
 import App from './App.jsx'
+import ErrorBoundary from './components/ErrorBoundary.jsx'
 
 createRoot(document.getElementById('root')).render(
   <BrowserRouter>
     <DndProvider backend={HTML5Backend}>
-      <App />
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
     </DndProvider>
   </BrowserRouter>
 )

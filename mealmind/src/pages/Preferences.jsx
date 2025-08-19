@@ -37,7 +37,10 @@ const Preferences = () => {
   }, [user]);
 
   const loadPreferences = async () => {
-    if (!user) return;
+    if (!user || !supabase) {
+      setLoading(false);
+      return;
+    }
     
     try {
       const { data, error } = await supabase
@@ -86,7 +89,10 @@ const Preferences = () => {
   };
 
   const savePreferences = async () => {
-    if (!user) return;
+    if (!user || !supabase) {
+      alert('Please log in to save preferences');
+      return;
+    }
     
     setSaving(true);
     try {

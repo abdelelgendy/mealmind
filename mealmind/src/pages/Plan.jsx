@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { usePlan } from "../plan/PlanContext";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { saveMealPlan, getMealPlan, deleteMealPlan, deleteAllMealPlans, supabase } from "../lib/supabase";
+import { saveMealPlan, getMealPlan, deleteMealPlan, deleteAllMealPlans, getMealTracking, trackMeal, supabase } from "../lib/supabase";
 import AddToPlanDialog from "../components/AddToPlanDialog";
 import MealTrackingSummary from "../components/MealTrackingSummary";
 import { useDrag, useDrop } from "react-dnd";
@@ -80,7 +80,7 @@ export default function Plan() {
 
   // Subscribe to meal_plans changes with Supabase Realtime
   useEffect(() => {
-    if (!user) return;
+    if (!user || !supabase) return;
 
     // Subscribe to meal_plans changes
     const channel = supabase.channel('public:meal_plans')
@@ -124,7 +124,7 @@ export default function Plan() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      try { supabase.removeChannel(channel); } catch {}
     };
   }, [user, setCell]);
   

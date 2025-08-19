@@ -23,7 +23,7 @@ export default function Pantry() {
   
   // Supabase Realtime subscription for pantry changes
   useEffect(() => {
-    if (!user) return;
+    if (!user || !supabase) return;
 
     const channel = supabase.channel('public:pantry')
       .on(
@@ -55,7 +55,7 @@ export default function Pantry() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      try { supabase.removeChannel(channel); } catch {}
     };
   }, [user]);
 
