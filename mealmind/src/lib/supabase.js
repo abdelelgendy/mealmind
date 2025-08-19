@@ -233,6 +233,11 @@ export async function getFavorites(userId) {
 }
 
 export async function addToFavorites(userId, recipe) {
+  if (!supabase) {
+    console.warn("Supabase not initialized - cannot add to favorites");
+    throw new Error("Database not available");
+  }
+  
   const { data, error } = await supabase
     .from("favorites")
     .upsert({
@@ -251,6 +256,11 @@ export async function addToFavorites(userId, recipe) {
 }
 
 export async function removeFromFavorites(userId, recipeId) {
+  if (!supabase) {
+    console.warn("Supabase not initialized - cannot remove from favorites");
+    throw new Error("Database not available");
+  }
+  
   const { data, error } = await supabase
     .from("favorites")
     .delete()

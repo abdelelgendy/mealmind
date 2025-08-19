@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import RecipeGrid from "../components/RecipeGrid";
-// import SmartRecipeGrid from "../components/SmartRecipeGrid";
+import SmartRecipeGrid from "../components/SmartRecipeGrid";
 import { searchRecipes, saveRecipeToCache, getRecipeById } from "../lib/recipes";
 import { usePlan } from "../plan/PlanContext";
 import { useAuth } from "../contexts/AuthContext";
 import { saveMealPlan } from "../lib/supabase";
-// import { useSmartFiltering } from "../hooks/useSmartFiltering";
+import { useSmartFiltering } from "../hooks/useSmartFiltering";
 
 export default function Search() {
   const { setCell } = usePlan(); // we need to update Plan when adding recipe
@@ -237,18 +237,14 @@ export default function Search() {
   };
 
   // Use smart filtering hook to process recipes based on user's pantry and preferences
-  // const { filteredRecipes, loading: smartFilteringLoading } = useSmartFiltering(
-  //   results.length > 0 ? results : featuredRecipes, 
-  //   {
-  //     ...filterOptions,
-  //     enablePantryFiltering: filterOptions.enablePantryFiltering,
-  //     enableDietaryFiltering: filterOptions.enableDietaryFiltering,
-  //     enableCalorieFiltering: filterOptions.enableCalorieFiltering
-  //   }
-  // );
-  
-  // Temporary fix - use regular results
-  const filteredRecipes = results.length > 0 ? results : featuredRecipes;
+  const { filteredRecipes, loading: smartFilteringLoading } = useSmartFiltering(
+    results.length > 0 ? results : featuredRecipes, 
+    {
+      enablePantryFiltering: filterOptions.enablePantryFiltering,
+      enableDietaryFiltering: filterOptions.enableDietaryFiltering,
+      enableCalorieFiltering: filterOptions.enableCalorieFiltering
+    }
+  );
 
   // Toggle filter options
   const handleFilterOptionChange = (option, value) => {
@@ -427,23 +423,43 @@ export default function Search() {
       {status === "loading" && <p className="muted">Searching…</p>}
       {status === "error" && <p className="muted" style={{ color: "#b91c1c" }}>{error}</p>}
       {status === "success" && (
-        <RecipeGrid 
-          recipes={results} 
-          onAddToPlan={addToPlan} 
-          favorites={favorites}
-          onFavoriteToggle={handleFavoriteToggle}
-        />
+        enableSmartFiltering ? (
+          <SmartRecipeGrid 
+            recipes={filteredRecipes} 
+            onAddToPlan={addToPlan} 
+            favorites={favorites}
+            onFavoriteToggle={handleFavoriteToggle}
+            showSubstitutions={showSubstitutions}
+          />
+        ) : (
+          <RecipeGrid 
+            recipes={results} 
+            onAddToPlan={addToPlan} 
+            favorites={favorites}
+            onFavoriteToggle={handleFavoriteToggle}
+          />
+        )
       )}
       {status === "featured" && (
         <>
           <h2 className="section-title">Featured Recipes</h2>
           {featuredRecipes.length > 0 ? (
-            <RecipeGrid 
-              recipes={featuredRecipes} 
-              onAddToPlan={addToPlan} 
-              favorites={favorites}
-              onFavoriteToggle={handleFavoriteToggle}
-            />
+            enableSmartFiltering ? (
+              <SmartRecipeGrid 
+                recipes={filteredRecipes} 
+                onAddToPlan={addToPlan} 
+                favorites={favorites}
+                onFavoriteToggle={handleFavoriteToggle}
+                showSubstitutions={showSubstitutions}
+              />
+            ) : (
+              <RecipeGrid 
+                recipes={featuredRecipes} 
+                onAddToPlan={addToPlan} 
+                favorites={favorites}
+                onFavoriteToggle={handleFavoriteToggle}
+              />
+            )
           ) : (
             <p className="muted">Try one of the quick searches above to discover recipes.</p>
           )}

@@ -34,8 +34,8 @@ export function useSmartFiltering(recipes, options = {}) {
       enhancedRecipe.containsAllergens = false;
       enhancedRecipe.withinCalorieTarget = true;
 
-      // Process pantry compatibility if enabled and user has pantry items
-      if (enablePantryFiltering && user && pantry && pantry.length > 0) {
+      // Process pantry compatibility if enabled and we have pantry items (user or demo data)
+      if (enablePantryFiltering && pantry && pantry.length > 0) {
         // Skip if recipe has no ingredients
         if (!recipe.ingredients || recipe.ingredients.length === 0) {
           enhancedRecipe.pantryCompatible = false;
@@ -73,8 +73,8 @@ export function useSmartFiltering(recipes, options = {}) {
         }
       }
       
-      // Process dietary preferences if enabled and user has preferences
-      if (enableDietaryFiltering && user && profile && profile.preferences) {
+      // Process dietary preferences if enabled and we have preferences (user or demo data)
+      if (enableDietaryFiltering && profile && profile.preferences) {
         const preferences = profile.preferences;
         
         // Diet compatibility (vegetarian, vegan, gluten-free, etc)
@@ -99,8 +99,8 @@ export function useSmartFiltering(recipes, options = {}) {
         }
       }
       
-      // Process calorie targets if enabled and user has calorie preferences
-      if (enableCalorieFiltering && user && profile && profile.preferences) {
+      // Process calorie targets if enabled and we have calorie preferences (user or demo data)
+      if (enableCalorieFiltering && profile && profile.preferences) {
         const { calories } = profile.preferences;
         
         if (calories && recipe.calories) {
@@ -116,7 +116,7 @@ export function useSmartFiltering(recipes, options = {}) {
     
     setFilteredRecipes(enhancedRecipes);
     setLoading(false);
-  }, [recipes, user, pantry, profile, enablePantryFiltering, enableDietaryFiltering, enableCalorieFiltering]);
+  }, [recipes, pantry, profile, enablePantryFiltering, enableDietaryFiltering, enableCalorieFiltering]);
 
   return { filteredRecipes, loading };
 }

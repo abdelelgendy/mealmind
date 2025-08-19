@@ -14,6 +14,41 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Demo pantry data for testing smart filtering
+  const getDemoPantryData = () => [
+    { name: "chicken breast", category: "protein", quantity: "2 lbs" },
+    { name: "olive oil", category: "oils", quantity: "1 bottle" },
+    { name: "salt", category: "seasonings", quantity: "1 container" },
+    { name: "black pepper", category: "seasonings", quantity: "1 container" },
+    { name: "garlic", category: "vegetables", quantity: "1 bulb" },
+    { name: "onion", category: "vegetables", quantity: "3 pieces" },
+    { name: "tomatoes", category: "vegetables", quantity: "5 pieces" },
+    { name: "lettuce", category: "vegetables", quantity: "2 heads" },
+    { name: "cucumber", category: "vegetables", quantity: "2 pieces" },
+    { name: "carrots", category: "vegetables", quantity: "1 bag" },
+    { name: "rice", category: "grains", quantity: "2 lbs" },
+    { name: "pasta", category: "grains", quantity: "1 box" },
+    { name: "bread", category: "grains", quantity: "1 loaf" },
+    { name: "milk", category: "dairy", quantity: "1 gallon" },
+    { name: "eggs", category: "protein", quantity: "1 dozen" },
+    { name: "cheese", category: "dairy", quantity: "1 block" },
+    { name: "butter", category: "dairy", quantity: "1 stick" },
+    { name: "flour", category: "baking", quantity: "5 lbs" },
+    { name: "sugar", category: "baking", quantity: "2 lbs" },
+    { name: "baking powder", category: "baking", quantity: "1 container" }
+  ];
+
+  // Demo profile data for testing
+  const getDemoProfile = () => ({
+    preferences: {
+      diet: "vegetarian",
+      calories: 2000,
+      allergies: "nuts, shellfish",
+      maxCookTime: 30,
+      mealSize: "medium"
+    }
+  });
+
   // Fetch user's data (profile, pantry, meal plan, favorites)
   const fetchUserData = async (userId) => {
     if (!userId) return false;
@@ -83,6 +118,11 @@ export function AuthProvider({ children }) {
             clearTimeout(dataTimeout);
             // Continue even if we can't fetch all data
           }
+        } else {
+          // No user logged in - use demo data for testing
+          console.log("No user logged in, using demo data for testing");
+          setPantry(getDemoPantryData());
+          setProfile(getDemoProfile());
         }
         
         clearTimeout(safetyTimeout);
