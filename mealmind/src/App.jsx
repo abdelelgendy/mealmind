@@ -11,7 +11,7 @@ function AppContent() {
   return (
     <div className="app-container">
       <Header />
-      <main className="main-content">
+      <main className="main-content container">
         <AppRoutes />
       </main>
     </div>
@@ -20,7 +20,7 @@ function AppContent() {
 
 /**
  * Root App component that sets up providers
- * Simplified to focus on context setup only
+ * Provides authentication and meal plan context to the entire app
  */
 export default function App() {
   return (

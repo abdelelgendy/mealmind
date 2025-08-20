@@ -6,6 +6,7 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 
 // Import styles
 import './styles/base.css';
+import './styles/components.css';
 import './styles/user-components.css';
 import './styles/plan-styles.css';
 import './styles/recipe-styles.css';

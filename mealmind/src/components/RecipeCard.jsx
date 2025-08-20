@@ -3,6 +3,7 @@ import AddToPlanDialog from "./AddToPlanDialog";
 import RecipeDetailsDialog from "./RecipeDetailsDialog";
 import { useAuth } from "../contexts/AuthContext";
 import { addToFavorites, removeFromFavorites } from "../lib/supabase";
+import { formatDuration } from "../utils/helpers";
 
 export default function RecipeCard({ recipe, onAddToPlan, favorites = [], onFavoriteToggle }) {
   const { user } = useAuth();
@@ -10,6 +11,8 @@ export default function RecipeCard({ recipe, onAddToPlan, favorites = [], onFavo
   const [openDetails, setOpenDetails] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   // Check if this recipe is in favorites
   useEffect(() => {
@@ -21,7 +24,6 @@ export default function RecipeCard({ recipe, onAddToPlan, favorites = [], onFavo
 
   // Handle add to plan button click
   const handleAddToPlan = () => {
-    // Always show the dialog for choosing when/where to add the recipe
     setOpenPlan(true);
   };
 
@@ -40,48 +42,129 @@ export default function RecipeCard({ recipe, onAddToPlan, favorites = [], onFavo
         await addToFavorites(user.id, recipe);
       }
       
-      // Toggle local state
       setIsFavorite(!isFavorite);
       
-      // Notify parent component if provided
       if (onFavoriteToggle) {
         onFavoriteToggle(recipe, !isFavorite);
       }
     } catch (error) {
       console.error("Error toggling favorite:", error);
+      alert("Failed to update favorites");
     } finally {
       setFavoriteLoading(false);
     }
   };
 
-  return (
-    <article className="card recipe-card">
-      <img className="recipe-img" src={recipe.image} alt={recipe.title} />
-      <div className="favorite-btn-container">
-        <button 
-          className={`favorite-btn ${isFavorite ? 'favorite-active' : ''}`} 
-          onClick={handleFavoriteToggle}
-          disabled={favoriteLoading}
-          aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
-        >
-          {favoriteLoading ? '•' : isFavorite ? '♥' : '♡'}
-        </button>
-      </div>
-      <div className="card-body">
-        <h3>{recipe.title}</h3>
-        {recipe.calories && <p className="muted">{recipe.calories} kcal</p>}
-        <div className="card-actions">
-          <button className="btn" onClick={handleAddToPlan}>Add to Plan</button>
-          <button className="btn-secondary" onClick={() => setOpenDetails(true)}>Details</button>
-        </div>
-      </div>
+  const handleImageLoad = () => setImageLoaded(true);
+  const handleImageError = () => setImageError(true);
 
-      <AddToPlanDialog 
-        open={openPlan} 
-        onClose={() => setOpenPlan(false)} 
-        recipe={recipe}
-        onAddToPlan={onAddToPlan} />
-      <RecipeDetailsDialog open={openDetails} onClose={() => setOpenDetails(false)} recipeId={recipe.id} />
-    </article>
+  return (
+    <>
+      <article className="recipe-card card card--interactive fade-in">
+        <div className="recipe-card__image-container">
+          {!imageLoaded && !imageError && (
+            <div className="recipe-card__image-skeleton skeleton"></div>
+          )}
+          
+          {imageError ? (
+            <div className="recipe-card__image-placeholder">
+              <span className="recipe-card__image-icon">🍽️</span>
+              <span className="text-sm text-muted">No image available</span>
+            </div>
+          ) : (
+            <img
+              src={recipe.image || '/placeholder-recipe.jpg'}
+              alt={recipe.title}
+              className={`recipe-card__image ${imageLoaded ? 'loaded' : ''}`}
+              onLoad={handleImageLoad}
+              onError={handleImageError}
+              loading="lazy"
+            />
+          )}
+          
+          <button
+            onClick={handleFavoriteToggle}
+            disabled={favoriteLoading}
+            className={`recipe-card__favorite-btn ${isFavorite ? 'active' : ''}`}
+            aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+          >
+            {favoriteLoading ? (
+              <div className="loading-spinner loading-spinner--sm"></div>
+            ) : (
+              <span className="recipe-card__favorite-icon">
+                {isFavorite ? '❤️' : '🤍'}
+              </span>
+            )}
+          </button>
+        </div>
+
+        <div className="card__body">
+          <h3 className="recipe-card__title card__title">{recipe.title}</h3>
+          
+          <div className="recipe-card__meta">
+            {recipe.readyInMinutes && (
+              <span className="recipe-card__time badge badge--primary">
+                ⏱️ {formatDuration(recipe.readyInMinutes)}
+              </span>
+            )}
+            
+            {recipe.servings && (
+              <span className="recipe-card__servings badge badge--info">
+                👥 {recipe.servings} servings
+              </span>
+            )}
+            
+            {recipe.healthScore && (
+              <span className="recipe-card__health badge badge--success">
+                💚 {recipe.healthScore}% healthy
+              </span>
+            )}
+          </div>
+
+          {recipe.summary && (
+            <p className="recipe-card__summary card__description">
+              {recipe.summary.replace(/<[^>]*>/g, '').substring(0, 120)}...
+            </p>
+          )}
+        </div>
+
+        <div className="card__footer">
+          <div className="recipe-card__actions">
+            <button
+              onClick={() => setOpenDetails(true)}
+              className="btn btn--outline btn--sm"
+            >
+              View Details
+            </button>
+            
+            <button
+              onClick={handleAddToPlan}
+              className="btn btn--primary btn--sm"
+            >
+              Add to Plan
+            </button>
+          </div>
+        </div>
+      </article>
+
+      {openPlan && (
+        <AddToPlanDialog
+          open={openPlan}
+          recipe={recipe}
+          onClose={() => setOpenPlan(false)}
+          onAddToPlan={onAddToPlan}
+        />
+      )}
+
+      {openDetails && (
+        <RecipeDetailsDialog
+          open={openDetails}
+          recipe={recipe}
+          onClose={() => setOpenDetails(false)}
+          onAddToPlan={handleAddToPlan}
+          recipeId={recipe.id}
+        />
+      )}
+    </>
   );
 }
