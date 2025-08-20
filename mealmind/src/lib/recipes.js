@@ -1,8 +1,8 @@
 import { supabase } from "./supabase";
+import config from "../config/environment.js";
 
 const API = 'https://api.spoonacular.com';
-
-const KEY = import.meta.env.VITE_SPOONACULAR_KEY || import.meta.env.VITE_SPOONACULAR_API_KEY;
+const KEY = config.spoonacular.apiKey;
 
 // simple in-memory cache to avoid duplicate calls during the session
 const memory = new Map();

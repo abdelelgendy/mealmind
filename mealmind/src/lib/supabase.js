@@ -1,11 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
+import config from "../config/environment.js";
 
 // Create a safe Supabase client even if env vars are missing
-export const supabase = supabaseUrl && supabaseKey 
-  ? createClient(supabaseUrl, supabaseKey)
+export const supabase = config.supabase.url && config.supabase.anonKey 
+  ? createClient(config.supabase.url, config.supabase.anonKey)
   : null;
 
 export async function testConnection() {
