@@ -1,4 +1,11 @@
 {
+  "name": "mealmind-root",
+  "private": true,
+  "scripts": {
+    "build": "cd mealmind && npm run build",
+    "dev": "cd mealmind && npm run dev",
+    "install": "cd mealmind && npm install"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.55.0",
     "react-router-dom": "^7.8.0"

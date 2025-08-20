@@ -1,36 +1,11 @@
 [build]
-  # Override any UI settings - use these values instead
-  base = "mealmind"
-  publish = "dist"
+  # Build from root directory
+  base = "."
+  publish = "mealmind/dist"
   command = "npm run build"
 
 [[redirects]]
   from = "/*"
-  to = "/index.html"
-  status = 200
-
-[[redirects]]
-  from = "/plan"
-  to = "/index.html"
-  status = 200
-
-[[redirects]]
-  from = "/pantry"
-  to = "/index.html"
-  status = 200
-
-[[redirects]]
-  from = "/favorites"
-  to = "/index.html"
-  status = 200
-
-[[redirects]]
-  from = "/recipes"
-  to = "/index.html"
-  status = 200
-
-[[redirects]]
-  from = "/preferences"
   to = "/index.html"
   status = 200
 
