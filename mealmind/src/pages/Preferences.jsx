@@ -1,10 +1,10 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { AuthContext } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext.jsx';
 import '../styles/base.css';
 
 const Preferences = () => {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const [preferences, setPreferences] = useState({
     dietary_restrictions: [],
     allergies: [],

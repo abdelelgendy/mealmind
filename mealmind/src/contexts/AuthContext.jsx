@@ -51,7 +51,7 @@ export function AuthProvider({ children }) {
 
   // Fetch user's data (profile, pantry, meal plan, favorites)
   const fetchUserData = async (userId) => {
-    if (!userId) return false;
+    if (!userId || !supabase) return false;
     
     try {
       console.log("Fetching user data for:", userId);
@@ -77,7 +77,9 @@ export function AuthProvider({ children }) {
   // Handle logout
   const handleLogOut = async () => {
     try {
-      await logOut();
+      if (supabase) {
+        await logOut();
+      }
       setUser(null);
       setProfile(null);
       setPantry([]);
@@ -98,6 +100,15 @@ export function AuthProvider({ children }) {
           console.log("Safety timeout triggered - forcing loading to complete");
           setLoading(false);
         }, 7000); // 7 seconds max for loading
+        
+        if (!supabase) {
+          console.log("Supabase not available, using demo data");
+          setPantry(getDemoPantryData());
+          setProfile(getDemoProfile());
+          clearTimeout(safetyTimeout);
+          setLoading(false);
+          return;
+        }
         
         const currentUser = await getCurrentUser();
         console.log("AuthContext: Current user check result:", currentUser ? "Found user" : "No user");
@@ -154,7 +165,7 @@ export function AuthProvider({ children }) {
         const currentUser = session?.user || null;
         setUser(currentUser);
         
-        if (currentUser) {
+        if (currentUser && supabase) {
           try {
             console.log("AuthContext: User authenticated, fetching data");
             // Don't wait indefinitely for data fetch on auth change
