@@ -7,11 +7,32 @@
   transition: all var(--transition-normal);
   border: 1px solid var(--border-light);
   background: var(--surface);
+  border-radius: var(--radius-lg);
+  transform: translateY(0);
 }
 
 .recipe-card:hover {
-  transform: translateY(-8px);
-  box-shadow: var(--shadow-xl);
+  transform: translateY(-4px);
+  box-shadow: 
+    0 8px 25px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(127, 176, 105, 0.1);
+  border-color: var(--brand-accent);
+}
+
+.recipe-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--brand-primary), var(--brand-accent));
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+
+.recipe-card:hover::before {
+  opacity: 1;
 }
 
 .recipe-card__image-container {
@@ -34,7 +55,7 @@
 }
 
 .recipe-card:hover .recipe-card__image {
-  transform: scale(1.05);
+  transform: scale(1.02);
 }
 
 .recipe-card__image-skeleton {
@@ -120,10 +141,59 @@
   display: flex;
   gap: var(--space-sm);
   justify-content: space-between;
+  padding: var(--space-md);
+  background: linear-gradient(to top, rgba(0,0,0,0.02), transparent);
 }
 
 .recipe-card__actions .btn {
   flex: 1;
+  position: relative;
+  font-weight: 600;
+  transition: all var(--transition-normal);
+}
+
+.recipe-card__actions .btn--outline {
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--brand-primary);
+  border: 1px solid var(--border-light);
+  backdrop-filter: blur(10px);
+}
+
+.recipe-card__actions .btn--outline:hover {
+  background: var(--brand-primary);
+  color: white;
+  border-color: var(--brand-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(45, 80, 22, 0.2);
+}
+
+.recipe-card__actions .btn--primary {
+  background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+  color: white;
+  border: 2px solid transparent;
+}
+
+.recipe-card__actions .btn--primary:hover {
+  background: linear-gradient(135deg, var(--brand-secondary), var(--brand-accent));
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(45, 80, 22, 0.25);
+}
+
+/* Add subtle pulse animation for primary buttons */
+.recipe-card__actions .btn--primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, transparent, rgba(255,255,255,0.1), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
+}
+
+.recipe-card:hover .btn--primary::before {
+  transform: translateX(100%);
 }
 
 /* =============================================================================

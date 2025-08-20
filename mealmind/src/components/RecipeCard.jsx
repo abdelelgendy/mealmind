@@ -13,6 +13,7 @@ export default function RecipeCard({ recipe, onAddToPlan, favorites = [], onFavo
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [addingToPlan, setAddingToPlan] = useState(false);
 
   // Check if this recipe is in favorites
   useEffect(() => {
@@ -24,7 +25,10 @@ export default function RecipeCard({ recipe, onAddToPlan, favorites = [], onFavo
 
   // Handle add to plan button click
   const handleAddToPlan = () => {
+    setAddingToPlan(true);
     setOpenPlan(true);
+    // Reset loading state when dialog closes
+    setTimeout(() => setAddingToPlan(false), 300);
   };
 
   // Handle favorite toggle
@@ -139,9 +143,10 @@ export default function RecipeCard({ recipe, onAddToPlan, favorites = [], onFavo
             
             <button
               onClick={handleAddToPlan}
-              className="btn btn--primary btn--sm"
+              className={`btn btn--primary btn--sm ${addingToPlan ? 'btn--loading' : ''}`}
+              disabled={addingToPlan}
             >
-              Add to Plan
+              {addingToPlan ? '' : 'Add to Plan'}
             </button>
           </div>
         </div>

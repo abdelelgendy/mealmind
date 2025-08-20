@@ -8,7 +8,7 @@ export default function RecipeGrid({
 }) {
   if (!recipes.length) return <p className="muted">No results yet.</p>;
   return (
-    <div className="grid">
+    <div className="grid stagger-animation">
       {recipes.map(r => (
         <RecipeCard 
           key={r.id} 

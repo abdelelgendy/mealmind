@@ -11,7 +11,7 @@ function AppContent() {
   return (
     <div className="app-container">
       <Header />
-      <main className="main-content container">
+      <main className="main-content container fade-in">
         <AppRoutes />
       </main>
     </div>

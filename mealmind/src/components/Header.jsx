@@ -35,7 +35,7 @@ export default function Header() {
 
   return (
     <header className="header">
-      <div className="logo">
+      <div className="logo hover-glow">
         <NavLink to={ROUTES.HOME} className="logo-link">
           MealMind
         </NavLink>
