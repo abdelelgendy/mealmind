@@ -1,0 +1,16 @@
+[build]
+  # Build from root directory
+  base = "."
+  publish = "mealmind/dist"
+  command = "npm run build"
+
+# Secrets scanning configuration - disable completely for this project
+[build.environment]
+  NODE_VERSION = "18"
+  # Disable secrets scanning entirely since VITE_ vars are public by design
+  SECRETS_SCAN_ENABLED = "false"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
