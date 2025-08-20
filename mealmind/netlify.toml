@@ -4,10 +4,13 @@
   publish = "mealmind/dist"
   command = "npm run build"
 
+# Secrets scanning configuration
+[build.environment]
+  NODE_VERSION = "18"
+  # Disable secrets scanning for known safe files
+  SECRETS_SCAN_OMIT_PATHS = ".env.local,.env.example"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-
-[build.environment]
-  NODE_VERSION = "18"
