@@ -317,13 +317,13 @@ p {
   transition: all var(--transition-fast);
 }
 
-.btn-secondary { 
+.btn-secondary, .btn--secondary { 
   background: var(--surface); 
   color: var(--text-primary);
   border: 2px solid var(--border-medium);
 }
 
-.btn-secondary:hover { 
+.btn-secondary:hover, .btn--secondary:hover { 
   background: var(--surface-hover);
   border-color: var(--brand-accent);
   transform: translateY(-2px);
@@ -660,22 +660,124 @@ input:focus, select:focus { border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(14
 
 /* Modal */
 .modal-backdrop {
-  position: fixed; inset: 0; background: rgba(0,0,0,.4);
-  display: grid; place-items: center; z-index: 50;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
 }
+
 .modal {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 1rem;
-  width: min(560px, 92vw);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  padding: 1.5rem;
+  width: min(420px, 90vw);
   max-height: 85vh;
-  overflow: hidden;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
+  position: relative;
+  animation: modal-enter 0.2s ease-out;
 }
-.modal .row { display:flex; gap:.5rem; }
+
+@media (max-width: 640px) {
+  .modal {
+    width: 95vw;
+    padding: 1rem;
+    margin: 1rem;
+  }
+  
+  .modal-actions {
+    flex-direction: column;
+  }
+  
+  .modal-actions .btn {
+    width: 100%;
+  }
+}
+
+@keyframes modal-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal .row { 
+  display: flex; 
+  gap: 0.75rem; 
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.modal h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.modal .muted {
+  margin: 0 0 1rem 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.modal-form-group {
+  margin-bottom: 1rem;
+}
+
+.modal-form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+}
+
+.modal-form-group .form-select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-size: 0.875rem;
+  transition: border-color var(--transition-fast);
+}
+
+.modal-form-group .form-select:focus {
+  outline: none;
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(45, 80, 22, 0.1);
+}
+
+.modal-form-group .form-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  justify-content: flex-end;
+}
+
+.modal-actions .btn {
+  min-width: 100px;
+}
 
 .recipe-img { background:#f1f3f8; }
 .grid:empty + .muted { display:block; } /* small helper if you show an empty message */

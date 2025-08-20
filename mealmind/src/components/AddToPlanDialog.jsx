@@ -25,11 +25,7 @@ export default function AddToPlanDialog({ open, onClose, recipe, onAddToPlan }) 
       if (onAddToPlan) {
         await onAddToPlan(recipe, day, slot);
       } else {
-        // Or just add to the plan directly
-        // Attempt to save to Supabase first if it has complete recipe data
-        if (recipe.ingredients || recipe.instructions) {
-          await saveRecipeToCache(recipe);
-        }
+        // Just add to the plan directly - don't require caching
         setCell(day, slot, { id: recipe.id || recipe.title, title: recipe.title });
       }
       onClose?.();
@@ -46,17 +42,40 @@ export default function AddToPlanDialog({ open, onClose, recipe, onAddToPlan }) 
     <Modal open={open} onClose={onClose}>
       <h3>Add to plan</h3>
       <p className="muted">{recipe?.title}</p>
-      <div className="row" style={{ marginTop: ".75rem" }}>
-        <select value={day} onChange={e=>setDay(e.target.value)} disabled={isAdding}>
+      
+      <div className="modal-form-group">
+        <label htmlFor="day-select">Day:</label>
+        <select 
+          id="day-select"
+          value={day} 
+          onChange={e=>setDay(e.target.value)} 
+          disabled={isAdding}
+          className="form-select"
+        >
           {DAYS.map(d => <option key={d} value={d}>{d}</option>)}
         </select>
-        <select value={slot} onChange={e=>setSlot(e.target.value)} disabled={isAdding}>
+      </div>
+      
+      <div className="modal-form-group">
+        <label htmlFor="slot-select">Meal:</label>
+        <select 
+          id="slot-select"
+          value={slot} 
+          onChange={e=>setSlot(e.target.value)} 
+          disabled={isAdding}
+          className="form-select"
+        >
           {SLOTS.map(s => <option key={s} value={s}>{cap(s)}</option>)}
         </select>
-        <button className="btn" onClick={add} disabled={isAdding}>
-          {isAdding ? "Adding..." : "Add"}
+      </div>
+      
+      <div className="modal-actions">
+        <button className="btn btn--primary" onClick={add} disabled={isAdding}>
+          {isAdding ? "Adding..." : "Add to Plan"}
         </button>
-        <button className="btn-secondary" onClick={onClose} disabled={isAdding}>Cancel</button>
+        <button className="btn btn--secondary" onClick={onClose} disabled={isAdding}>
+          Cancel
+        </button>
       </div>
     </Modal>
   );

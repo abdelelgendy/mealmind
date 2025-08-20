@@ -53,8 +53,12 @@ export default function Dashboard() {
   // Handle adding recipes to plan
   const addToPlan = async (recipe, day, slot) => {
     try {
-      // First save the recipe to Supabase cache
-      await saveRecipeToCache(recipe);
+      // Try to save the recipe to Supabase cache, but don't fail if it doesn't work
+      try {
+        await saveRecipeToCache(recipe);
+      } catch (cacheError) {
+        console.warn("Failed to cache recipe, but continuing:", cacheError.message);
+      }
       
       // If user is logged in, save to their meal plan in Supabase
       if (user) {
