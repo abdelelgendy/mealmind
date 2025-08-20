@@ -7,8 +7,8 @@
 # Secrets scanning configuration
 [build.environment]
   NODE_VERSION = "18"
-  # Disable secrets scanning for known safe files
-  SECRETS_SCAN_OMIT_PATHS = ".env.local,.env.example"
+  # Disable secrets scanning for known safe files that contain examples
+  SECRETS_SCAN_OMIT_PATHS = ".env.local,.env.example,README.md,mealmind/README.md"
 
 [[redirects]]
   from = "/*"

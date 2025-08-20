@@ -79,9 +79,9 @@ npm install
 3. Create `.env.local` with your environment variables:
 
 ```env
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-VITE_SPOONACULAR_API_KEY=your_spoonacular_api_key
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+VITE_SPOONACULAR_API_KEY=your_spoonacular_api_key_here
 ```
 
 4. Start the development server:
