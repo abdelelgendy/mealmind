@@ -14,6 +14,11 @@ const Pantry = () => {
     fetchPantryItems();
   }, []);
 
+  // Debug effect to log state changes
+  useEffect(() => {
+    console.log('Pantry items state changed:', pantryItems.length, 'items');
+  }, [pantryItems]);
+
   const fetchPantryItems = async () => {
     try {
       setLoading(true);
@@ -72,10 +77,17 @@ const Pantry = () => {
 
       // Always add to local state first for immediate UI update
       const updatedItems = [...pantryItems, itemToAdd];
+      console.log('Current pantryItems:', pantryItems);
+      console.log('New updatedItems:', updatedItems);
       setPantryItems(updatedItems);
       localStorage.setItem('pantryItems', JSON.stringify(updatedItems));
       
       console.log('Added to localStorage, pantry now has:', updatedItems.length, 'items');
+      
+      // Force a re-render by triggering a state change
+      setTimeout(() => {
+        console.log('Checking state after timeout:', pantryItems.length);
+      }, 100);
 
       // Try to sync with Supabase in the background (optional)
       if (supabase) {
@@ -215,6 +227,31 @@ const Pantry = () => {
             Add Item
           </button>
         </form>
+      </div>
+
+      {/* Debug Info */}
+      <div style={{ background: '#f0f0f0', padding: '10px', margin: '10px 0', borderRadius: '5px' }}>
+        <strong>Debug Info:</strong> 
+        <br />Items in state: {pantryItems.length}
+        <br />Items in localStorage: {localStorage.getItem('pantryItems') ? JSON.parse(localStorage.getItem('pantryItems')).length : 0}
+        <br />Error: {error || 'None'}
+        <br />Loading: {loading ? 'Yes' : 'No'}
+        <br />
+        <button onClick={() => {
+          console.log('Test button clicked');
+          setPantryItems([...pantryItems, { id: Date.now(), name: 'Test Item', quantity: 1, unit: 'piece' }]);
+        }}>
+          Test Add Item
+        </button>
+        <button onClick={() => {
+          console.log('Refresh from localStorage');
+          const localItems = localStorage.getItem('pantryItems');
+          if (localItems) {
+            setPantryItems(JSON.parse(localItems));
+          }
+        }}>
+          Refresh from localStorage
+        </button>
       </div>
 
       {/* Pantry Items Display */}

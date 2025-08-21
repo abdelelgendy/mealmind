@@ -25,7 +25,7 @@ export default function AppRoutes() {
         path="/pantry" 
         element={
           <ProtectedRoute>
-            <Pantry pantryItems={pantry} />
+            <Pantry />
           </ProtectedRoute>
         } 
       />
