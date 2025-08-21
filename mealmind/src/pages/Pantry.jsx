@@ -17,32 +17,40 @@ const Pantry = () => {
   const fetchPantryItems = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('pantry_items')
-        .select('*')
-        .order('name');
-
-      if (error) {
-        console.error('Error fetching pantry items:', error);
-        // Fallback to localStorage
-        const localItems = localStorage.getItem('pantryItems');
-        if (localItems) {
-          setPantryItems(JSON.parse(localItems));
-        }
-        setError('Using offline mode');
-      } else {
-        setPantryItems(data || []);
-        // Sync to localStorage
-        localStorage.setItem('pantryItems', JSON.stringify(data || []));
+      
+      // Always load from localStorage first for immediate display
+      const localItems = localStorage.getItem('pantryItems');
+      if (localItems) {
+        const parsedItems = JSON.parse(localItems);
+        setPantryItems(parsedItems);
         setError(null);
+      }
+
+      // Try to sync with Supabase in the background if available
+      if (supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('pantry_items')
+            .select('*')
+            .order('name');
+
+          if (!error && data) {
+            setPantryItems(data);
+            localStorage.setItem('pantryItems', JSON.stringify(data));
+            setError(null);
+          } else {
+            console.log('Supabase fetch failed, using local storage');
+            setError('Using offline mode');
+          }
+        } catch (supabaseError) {
+          console.log('Supabase connection failed, using local storage');
+          setError('Using offline mode');
+        }
+      } else {
+        setError('Using offline mode - no database connection');
       }
     } catch (err) {
       console.error('Error:', err);
-      // Fallback to localStorage
-      const localItems = localStorage.getItem('pantryItems');
-      if (localItems) {
-        setPantryItems(JSON.parse(localItems));
-      }
       setError('Using offline mode');
     } finally {
       setLoading(false);
@@ -50,39 +58,48 @@ const Pantry = () => {
   };
 
   const addPantryItem = async (item) => {
+    console.log('addPantryItem called with:', item);
     try {
       const itemToAdd = {
         name: item.name,
         quantity: item.quantity || 1,
         unit: item.unit || 'piece',
-        added_date: new Date().toISOString()
+        added_date: new Date().toISOString(),
+        id: Date.now() // Generate a local ID
       };
 
-      // Try to add to Supabase
-      const { data, error } = await supabase
-        .from('pantry_items')
-        .insert([itemToAdd])
-        .select();
+      console.log('Item to add:', itemToAdd);
 
-      if (error) {
-        console.error('Error adding to Supabase:', error);
-        // Add to local state and localStorage
-        const newItemWithId = { ...itemToAdd, id: Date.now() };
-        const updatedItems = [...pantryItems, newItemWithId];
-        setPantryItems(updatedItems);
-        localStorage.setItem('pantryItems', JSON.stringify(updatedItems));
-      } else {
-        // Successfully added to Supabase
-        setPantryItems(prev => [...prev, data[0]]);
-        localStorage.setItem('pantryItems', JSON.stringify([...pantryItems, data[0]]));
+      // Always add to local state first for immediate UI update
+      const updatedItems = [...pantryItems, itemToAdd];
+      setPantryItems(updatedItems);
+      localStorage.setItem('pantryItems', JSON.stringify(updatedItems));
+      
+      console.log('Added to localStorage, pantry now has:', updatedItems.length, 'items');
+
+      // Try to sync with Supabase in the background (optional)
+      if (supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('pantry_items')
+            .insert([{ ...itemToAdd, id: undefined }]) // Remove local ID for Supabase
+            .select();
+
+          if (!error && data && data[0]) {
+            // Update the item with Supabase ID
+            const itemsWithSupabaseId = updatedItems.map(localItem => 
+              localItem.id === itemToAdd.id ? { ...localItem, id: data[0].id } : localItem
+            );
+            setPantryItems(itemsWithSupabaseId);
+            localStorage.setItem('pantryItems', JSON.stringify(itemsWithSupabaseId));
+          }
+        } catch (supabaseError) {
+          console.log('Supabase sync failed, using local storage only');
+        }
       }
     } catch (err) {
       console.error('Error adding item:', err);
-      // Add to local state as fallback
-      const newItemWithId = { ...itemToAdd, id: Date.now() };
-      const updatedItems = [...pantryItems, newItemWithId];
-      setPantryItems(updatedItems);
-      localStorage.setItem('pantryItems', JSON.stringify(updatedItems));
+      alert('Failed to add item. Please try again.');
     }
   };
 
@@ -99,31 +116,35 @@ const Pantry = () => {
   };
 
   const handleQuickAdd = async (item) => {
+    console.log('QuickAdd called with:', item);
     await addPantryItem(item);
   };
 
   const removePantryItem = async (id) => {
     try {
-      // Try to remove from Supabase
-      const { error } = await supabase
-        .from('pantry_items')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        console.error('Error removing from Supabase:', error);
-      }
-
-      // Remove from local state regardless
+      // Always remove from local state first for immediate UI update
       const updatedItems = pantryItems.filter(item => item.id !== id);
       setPantryItems(updatedItems);
       localStorage.setItem('pantryItems', JSON.stringify(updatedItems));
+
+      // Try to sync with Supabase in the background if available
+      if (supabase) {
+        try {
+          const { error } = await supabase
+            .from('pantry_items')
+            .delete()
+            .eq('id', id);
+
+          if (error) {
+            console.log('Supabase delete failed, using local storage only');
+          }
+        } catch (supabaseError) {
+          console.log('Supabase connection failed for delete operation');
+        }
+      }
     } catch (err) {
       console.error('Error removing item:', err);
-      // Remove from local state as fallback
-      const updatedItems = pantryItems.filter(item => item.id !== id);
-      setPantryItems(updatedItems);
-      localStorage.setItem('pantryItems', JSON.stringify(updatedItems));
+      alert('Failed to remove item. Please try again.');
     }
   };
 
