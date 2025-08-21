@@ -1,7 +1,6 @@
+import React from 'react';
 import { AuthProvider } from "./contexts/AuthContext";
 import { PlanProvider } from "./plan/PlanContext";
-import { DndProvider } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
 import Header from "./components/Header";
 import AppRoutes from "./routes/AppRoutes";
 
@@ -25,13 +24,22 @@ function AppContent() {
  * Provides authentication and meal plan context to the entire app
  */
 export default function App() {
-  return (
-    <AuthProvider>
-      <PlanProvider>
-        <DndProvider backend={HTML5Backend}>
+  try {
+    return (
+      <AuthProvider>
+        <PlanProvider>
           <AppContent />
-        </DndProvider>
-      </PlanProvider>
-    </AuthProvider>
-  );
+        </PlanProvider>
+      </AuthProvider>
+    );
+  } catch (error) {
+    console.error('App error:', error);
+    return (
+      <div style={{ padding: '20px', backgroundColor: '#f8d7da', color: '#721c24' }}>
+        <h1>Application Error</h1>
+        <p>Error: {error.message}</p>
+        <button onClick={() => window.location.reload()}>Reload Page</button>
+      </div>
+    );
+  }
 }

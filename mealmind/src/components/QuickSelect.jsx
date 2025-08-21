@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { QUICK_SELECT_PANTRY_ITEMS, MOST_COMMON_PANTRY_ITEMS } from '../constants/quickSelectItems';
 import '../styles/quick-select.css';
 
-const QuickSelect = ({ onAddItem, loading }) => {
+const QuickSelect = ({ onItemSelect, loading }) => {
   const [selectedCategory, setSelectedCategory] = useState('Most Common');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -23,7 +23,7 @@ const QuickSelect = ({ onAddItem, loading }) => {
   );
 
   const handleQuickAdd = (item) => {
-    onAddItem({
+    onItemSelect({
       name: item.name,
       quantity: item.quantity,
       unit: item.unit

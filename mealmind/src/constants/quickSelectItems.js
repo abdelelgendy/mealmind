@@ -5,7 +5,7 @@ export const QUICK_SELECT_PANTRY_ITEMS = {
     { name: "ground beef", quantity: 1, unit: "lb", emoji: "🥩" },
     { name: "salmon fillet", quantity: 2, unit: "pcs", emoji: "🐟" },
     { name: "eggs", quantity: 12, unit: "pcs", emoji: "🥚" },
-    { name: "tofu", quantity: 1, unit: "block", emoji: "🧄" },
+    { name: "tofu", quantity: 1, unit: "block", emoji: "🟧" },
     { name: "turkey breast", quantity: 1, unit: "lb", emoji: "🦃" },
     { name: "shrimp", quantity: 1, unit: "lb", emoji: "🦐" },
     { name: "ground turkey", quantity: 1, unit: "lb", emoji: "🦃" }
@@ -15,7 +15,7 @@ export const QUICK_SELECT_PANTRY_ITEMS = {
     { name: "garlic", quantity: 1, unit: "bulb", emoji: "🧄" },
     { name: "tomatoes", quantity: 4, unit: "pcs", emoji: "🍅" },
     { name: "carrots", quantity: 1, unit: "bag", emoji: "🥕" },
-    { name: "bell peppers", quantity: 3, unit: "pcs", emoji: "🫑" },
+    { name: "bell peppers", quantity: 3, unit: "pcs", emoji: "🌶️" },
     { name: "broccoli", quantity: 2, unit: "heads", emoji: "🥦" },
     { name: "spinach", quantity: 1, unit: "bag", emoji: "🥬" },
     { name: "potatoes", quantity: 5, unit: "pcs", emoji: "🥔" },
@@ -32,7 +32,7 @@ export const QUICK_SELECT_PANTRY_ITEMS = {
     { name: "avocados", quantity: 2, unit: "pcs", emoji: "🥑" },
     { name: "berries", quantity: 1, unit: "cup", emoji: "🫐" },
     { name: "grapes", quantity: 1, unit: "bunch", emoji: "🍇" },
-    { name: "lime", quantity: 2, unit: "pcs", emoji: "🟢" }
+    { name: "lime", quantity: 2, unit: "pcs", emoji: "🍋" }
   ],
   "Grains": [
     { name: "white rice", quantity: 2, unit: "lbs", emoji: "🍚" },
@@ -55,14 +55,14 @@ export const QUICK_SELECT_PANTRY_ITEMS = {
     { name: "parmesan", quantity: 1, unit: "wedge", emoji: "🧀" }
   ],
   "Pantry Staples": [
-    { name: "olive oil", quantity: 1, unit: "bottle", emoji: "🫒" },
-    { name: "vegetable oil", quantity: 1, unit: "bottle", emoji: "🛢️" },
+    { name: "olive oil", quantity: 1, unit: "bottle", emoji: "🍶" },
+    { name: "vegetable oil", quantity: 1, unit: "bottle", emoji: "🍶" },
     { name: "salt", quantity: 1, unit: "container", emoji: "🧂" },
     { name: "black pepper", quantity: 1, unit: "container", emoji: "⚫" },
     { name: "sugar", quantity: 2, unit: "lbs", emoji: "🍯" },
     { name: "baking powder", quantity: 1, unit: "container", emoji: "🥄" },
-    { name: "vanilla extract", quantity: 1, unit: "bottle", emoji: "🌿" },
-    { name: "soy sauce", quantity: 1, unit: "bottle", emoji: "🥢" },
+    { name: "vanilla extract", quantity: 1, unit: "bottle", emoji: "🍶" },
+    { name: "soy sauce", quantity: 1, unit: "bottle", emoji: "🍶" },
     { name: "honey", quantity: 1, unit: "jar", emoji: "🍯" },
     { name: "vinegar", quantity: 1, unit: "bottle", emoji: "🍶" }
   ],
@@ -87,7 +87,7 @@ export const MOST_COMMON_PANTRY_ITEMS = [
   { name: "tomatoes", quantity: 4, unit: "pcs", emoji: "🍅", category: "Vegetables" },
   { name: "chicken breast", quantity: 1, unit: "lb", emoji: "🐔", category: "Protein" },
   { name: "eggs", quantity: 12, unit: "pcs", emoji: "🥚", category: "Protein" },
-  { name: "olive oil", quantity: 1, unit: "bottle", emoji: "🫒", category: "Pantry Staples" },
+  { name: "olive oil", quantity: 1, unit: "bottle", emoji: "🍶", category: "Pantry Staples" },
   { name: "salt", quantity: 1, unit: "container", emoji: "🧂", category: "Pantry Staples" },
   { name: "black pepper", quantity: 1, unit: "container", emoji: "⚫", category: "Pantry Staples" },
   { name: "milk", quantity: 1, unit: "gallon", emoji: "🥛", category: "Dairy" },
