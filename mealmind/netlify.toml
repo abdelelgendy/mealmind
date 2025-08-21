@@ -1,7 +1,7 @@
 [build]
-  # Build from root directory
-  base = "."
-  publish = "mealmind/dist"
+  # Build from the mealmind subdirectory
+  base = "mealmind"
+  publish = "dist"
   command = "npm run build"
 
 # Secrets scanning configuration

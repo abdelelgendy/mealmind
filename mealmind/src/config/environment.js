@@ -11,11 +11,11 @@ const requiredEnvVars = [
 
 const config = {
   supabase: {
-    url: import.meta.env.VITE_SUPABASE_URL,
-    anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+    url: import.meta.env.VITE_SUPABASE_URL || '',
+    anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY || '',
   },
   spoonacular: {
-    apiKey: import.meta.env.VITE_SPOONACULAR_API_KEY,
+    apiKey: import.meta.env.VITE_SPOONACULAR_API_KEY || '',
   },
   isDevelopment: import.meta.env.DEV,
   isProduction: import.meta.env.PROD,

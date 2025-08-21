@@ -1,10 +1,35 @@
 import { createClient } from "@supabase/supabase-js";
 import config from "../config/environment.js";
 
+// Validate URL format before creating client
+function isValidUrl(string) {
+  try {
+    new URL(string);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
 // Create a safe Supabase client even if env vars are missing
-export const supabase = config.supabase.url && config.supabase.anonKey 
-  ? createClient(config.supabase.url, config.supabase.anonKey)
-  : null;
+export const supabase = (
+  config.supabase.url && 
+  config.supabase.anonKey && 
+  isValidUrl(config.supabase.url)
+) ? createClient(config.supabase.url, config.supabase.anonKey) : null;
+
+// Log initialization status (only in development)
+if (config.isDevelopment) {
+  if (!supabase) {
+    console.warn("Supabase client not initialized:", {
+      hasUrl: !!config.supabase.url,
+      hasKey: !!config.supabase.anonKey,
+      isValidUrl: config.supabase.url ? isValidUrl(config.supabase.url) : false
+    });
+  } else {
+    console.log("Supabase client initialized successfully");
+  }
+}
 
 export async function testConnection() {
   if (!supabase) {
