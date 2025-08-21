@@ -1235,3 +1235,73 @@ input:focus, select:focus { border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(14
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 1.5rem;
 }
+
+/* =============================================================================
+   Pantry Manual Add Section
+   ============================================================================= */
+.manual-add-section {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border: 2px solid var(--border-light);
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.manual-add-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent));
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+
+.manual-add-section h3 {
+  color: var(--text-secondary);
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.manual-add-section h3::before {
+  content: '✏️';
+  font-size: 1.1rem;
+}
+
+.manual-add-section:hover {
+  border-color: var(--brand-accent);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.manual-add-section:hover::before {
+  opacity: 1;
+}
+
+.manual-add-section:focus-within {
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(45, 80, 22, 0.1);
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .manual-add-section {
+  background: var(--card-bg-dark);
+  border-color: var(--border-color-dark);
+}
+
+[data-theme="dark"] .manual-add-section h3 {
+  color: var(--text-secondary-dark);
+}
+
+[data-theme="dark"] .manual-add-section:hover {
+  border-color: var(--brand-accent);
+}

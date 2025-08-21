@@ -1,298 +1,232 @@
-import { useEffect, useMemo, useState } from "react";
-import { loadPantry, savePantry } from "../utils/storage";
-import { useAuth } from "../contexts/AuthContext";
-import { savePantry as saveUserPantry, supabase } from "../lib/supabase";
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+import QuickSelect from '../components/QuickSelect';
+import '../styles/quick-select.css';
 
-function uid() {
-  return Math.random().toString(36).slice(2, 9);
-}
+const Pantry = () => {
+  const [pantryItems, setPantryItems] = useState([]);
+  const [newItem, setNewItem] = useState({ name: '', quantity: '', unit: '' });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-export default function Pantry() {
-  const { user, pantry: userPantry, setPantry } = useAuth();
-  const [items, setItems] = useState(() => user ? userPantry : loadPantry());
-  const [form, setForm] = useState({ name: "", quantity: "", unit: "" });
-  const [editingId, setEditingId] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  // Use user pantry when available
+  // Load pantry items on component mount
   useEffect(() => {
-    if (user && userPantry) {
-      setItems(userPantry);
-    }
-  }, [user, userPantry]);
-  
-  // Supabase Realtime subscription for pantry changes
-  useEffect(() => {
-    if (!user || !supabase) return;
+    fetchPantryItems();
+  }, []);
 
-    const channel = supabase.channel('public:pantry')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'pantry',
-          filter: `user_id=eq.${user.id}`
-        },
-        payload => {
-          console.log("Pantry change:", payload);
-          if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
-            setItems(prev => {
-              const index = prev.findIndex(i => i.id === payload.new.id);
-              if (index >= 0) {
-                const copy = [...prev];
-                copy[index] = payload.new;
-                return copy;
-              } else return [...prev, payload.new];
-            });
-          }
-
-          if (payload.eventType === "DELETE") {
-            setItems(prev => prev.filter(i => i.id !== payload.old.id));
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      try { supabase.removeChannel(channel); } catch {}
-    };
-  }, [user]);
-
-  // persist on change
-  useEffect(() => { 
-    if (!user) {
-      // Local storage for non-authenticated users
-      savePantry(items); 
-    }
-  }, [items, user]);
-
-  // derived: simple count & distinct items
-  const stats = useMemo(() => ({
-    count: items.length,
-    totalQty: items.reduce((sum, it) => sum + (Number(it.quantity) || 0), 0),
-    categories: [...new Set(items.map(it => categorizeIngredient(it.name)))]
-  }), [items]);
-  
-  // Helper function to categorize ingredients for better organization
-  function categorizeIngredient(name) {
-    const lowerName = name.toLowerCase();
-    
-    if (lowerName.includes('chicken') || lowerName.includes('beef') || 
-        lowerName.includes('pork') || lowerName.includes('fish') ||
-        lowerName.includes('meat')) {
-      return 'Protein';
-    } else if (lowerName.includes('rice') || lowerName.includes('pasta') ||
-              lowerName.includes('bread') || lowerName.includes('flour') ||
-              lowerName.includes('grain')) {
-      return 'Grains';
-    } else if (lowerName.includes('milk') || lowerName.includes('cheese') ||
-              lowerName.includes('yogurt') || lowerName.includes('cream') ||
-              lowerName.includes('butter')) {
-      return 'Dairy';
-    } else if (lowerName.includes('apple') || lowerName.includes('orange') ||
-              lowerName.includes('banana') || lowerName.includes('berry') ||
-              lowerName.includes('fruit')) {
-      return 'Fruits';
-    } else if (lowerName.includes('carrot') || lowerName.includes('broccoli') ||
-              lowerName.includes('potato') || lowerName.includes('onion') ||
-              lowerName.includes('tomato') || lowerName.includes('vegetable')) {
-      return 'Vegetables';
-    } else if (lowerName.includes('oil') || lowerName.includes('vinegar') ||
-              lowerName.includes('sauce') || lowerName.includes('spice') ||
-              lowerName.includes('herb') || lowerName.includes('salt')) {
-      return 'Condiments';
-    }
-    
-    return 'Other';
-  }
-
-  function resetForm() { setForm({ name: "", quantity: "", unit: "" }); }
-
-  async function onSubmit(e) {
-    e.preventDefault();
-    const name = form.name.trim();
-    const quantity = Number(form.quantity) || 0;
-    const unit = form.unit.trim();
-
-    if (!name) return; // minimal validation
-    
-    setLoading(true);
-    
+  const fetchPantryItems = async () => {
     try {
-      let updatedItems;
-      
-      if (editingId) {
-        // Update an existing item
-        updatedItems = items.map(it =>
-          it.id === editingId ? { ...it, name, quantity, unit } : it
-        );
-      } else {
-        // Add a new item
-        const newItem = { 
-          id: uid(), 
-          name, 
-          quantity, 
-          unit 
-        };
-        updatedItems = [newItem, ...items];
-      }
-      
-      // Update local state
-      setItems(updatedItems);
-      
-      // If user is logged in, save to Supabase
-      if (user) {
-        await saveUserPantry(user.id, updatedItems);
-        setPantry(updatedItems); // Update the auth context
-        console.log("Pantry saved to Supabase");
-      }
-      
-      setEditingId(null);
-      resetForm();
-    } catch (error) {
-      console.error("Error saving pantry item:", error);
-      alert("Error saving pantry item. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function onEdit(id) {
-    const it = items.find(x => x.id === id);
-    if (!it) return;
-    setForm({ name: it.name, quantity: String(it.quantity ?? ""), unit: it.unit ?? "" });
-    setEditingId(id);
-  }
-
-  async function onDelete(id) {
-    setLoading(true);
-    
-    try {
-      const updatedItems = items.filter(it => it.id !== id);
-      
-      // Update local state
-      setItems(updatedItems);
-      
-      // If user is logged in, save to Supabase
-      if (user) {
-        await saveUserPantry(user.id, updatedItems);
-        setPantry(updatedItems); // Update the auth context
-        console.log("Updated pantry saved to Supabase after item deletion");
-      }
-      
-      if (editingId === id) {
-        setEditingId(null);
-        resetForm();
-      }
-    } catch (error) {
-      console.error("Error deleting pantry item:", error);
-      alert("Error deleting pantry item. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function onClearAll() {
-    if (confirm("Clear all pantry items?")) {
       setLoading(true);
-      
-      try {
-        // Update local state
-        setItems([]);
-        
-        // If user is logged in, save to Supabase
-        if (user) {
-          await saveUserPantry(user.id, []);
-          setPantry([]); // Update the auth context
-          console.log("Cleared pantry in Supabase");
+      const { data, error } = await supabase
+        .from('pantry_items')
+        .select('*')
+        .order('name');
+
+      if (error) {
+        console.error('Error fetching pantry items:', error);
+        // Fallback to localStorage
+        const localItems = localStorage.getItem('pantryItems');
+        if (localItems) {
+          setPantryItems(JSON.parse(localItems));
         }
-      } catch (error) {
-        console.error("Error clearing pantry:", error);
-        alert("Error clearing pantry. Please try again.");
-      } finally {
-        setLoading(false);
+        setError('Using offline mode');
+      } else {
+        setPantryItems(data || []);
+        // Sync to localStorage
+        localStorage.setItem('pantryItems', JSON.stringify(data || []));
+        setError(null);
       }
+    } catch (err) {
+      console.error('Error:', err);
+      // Fallback to localStorage
+      const localItems = localStorage.getItem('pantryItems');
+      if (localItems) {
+        setPantryItems(JSON.parse(localItems));
+      }
+      setError('Using offline mode');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const addPantryItem = async (item) => {
+    try {
+      const itemToAdd = {
+        name: item.name,
+        quantity: item.quantity || 1,
+        unit: item.unit || 'piece',
+        added_date: new Date().toISOString()
+      };
+
+      // Try to add to Supabase
+      const { data, error } = await supabase
+        .from('pantry_items')
+        .insert([itemToAdd])
+        .select();
+
+      if (error) {
+        console.error('Error adding to Supabase:', error);
+        // Add to local state and localStorage
+        const newItemWithId = { ...itemToAdd, id: Date.now() };
+        const updatedItems = [...pantryItems, newItemWithId];
+        setPantryItems(updatedItems);
+        localStorage.setItem('pantryItems', JSON.stringify(updatedItems));
+      } else {
+        // Successfully added to Supabase
+        setPantryItems(prev => [...prev, data[0]]);
+        localStorage.setItem('pantryItems', JSON.stringify([...pantryItems, data[0]]));
+      }
+    } catch (err) {
+      console.error('Error adding item:', err);
+      // Add to local state as fallback
+      const newItemWithId = { ...itemToAdd, id: Date.now() };
+      const updatedItems = [...pantryItems, newItemWithId];
+      setPantryItems(updatedItems);
+      localStorage.setItem('pantryItems', JSON.stringify(updatedItems));
+    }
+  };
+
+  const handleManualAdd = async (e) => {
+    e.preventDefault();
+    
+    if (!newItem.name.trim()) {
+      alert('Please enter an item name');
+      return;
+    }
+
+    await addPantryItem(newItem);
+    setNewItem({ name: '', quantity: '', unit: '' });
+  };
+
+  const handleQuickAdd = async (item) => {
+    await addPantryItem(item);
+  };
+
+  const removePantryItem = async (id) => {
+    try {
+      // Try to remove from Supabase
+      const { error } = await supabase
+        .from('pantry_items')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error removing from Supabase:', error);
+      }
+
+      // Remove from local state regardless
+      const updatedItems = pantryItems.filter(item => item.id !== id);
+      setPantryItems(updatedItems);
+      localStorage.setItem('pantryItems', JSON.stringify(updatedItems));
+    } catch (err) {
+      console.error('Error removing item:', err);
+      // Remove from local state as fallback
+      const updatedItems = pantryItems.filter(item => item.id !== id);
+      setPantryItems(updatedItems);
+      localStorage.setItem('pantryItems', JSON.stringify(updatedItems));
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="page-container">
+        <div className="loading-spinner">
+          <div className="spinner"></div>
+          <p>Loading your pantry...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <section className="container">
-      <h1>Pantry</h1>
-      <p className="muted">Track ingredients you have on hand. We’ll subtract these from shopping lists later.</p>
-
-      <form className="pantry-form" onSubmit={onSubmit}>
-        <input
-          placeholder="Item name (e.g., chicken breast)"
-          value={form.name}
-          onChange={e => setForm({ ...form, name: e.target.value })}
-        />
-        <input
-          type="number"
-          min="0"
-          step="1"
-          placeholder="Qty"
-          value={form.quantity}
-          onChange={e => setForm({ ...form, quantity: e.target.value })}
-        />
-        <input
-          placeholder="Unit (g, ml, pcs)"
-          value={form.unit}
-          onChange={e => setForm({ ...form, unit: e.target.value })}
-        />
-        <button className="btn" disabled={loading}>
-          {loading ? "Saving..." : (editingId ? "Update" : "Add")}
-        </button>
-        {editingId && !loading && (
-          <button type="button" className="btn-secondary" onClick={() => { setEditingId(null); resetForm(); }}>
-            Cancel
-          </button>
-        )}
-      </form>
-
-      <div className="pantry-toolbar">
-        <span className="muted">{stats.count} items • total qty {stats.totalQty}</span>
-        {items.length > 0 && (
-          <button className="btn-secondary" onClick={onClearAll}>Clear all</button>
-        )}
+    <div className="page-container">
+      <div className="page-header">
+        <h1>My Pantry</h1>
+        <p>Manage your ingredients and pantry items</p>
+        {error && <div className="error-banner">⚠️ {error}</div>}
       </div>
 
-      {items.length === 0 ? (
-        <div className="empty-pantry">
-          <p className="muted">No items yet. Add your first ingredient above.</p>
-          <p className="muted">Having ingredients in your pantry will help with recipe recommendations.</p>
-        </div>
-      ) : (
-        <div className="pantry-categories">
-          {['Protein', 'Vegetables', 'Fruits', 'Grains', 'Dairy', 'Condiments', 'Other'].map(category => {
-            const categoryItems = items.filter(it => categorizeIngredient(it.name) === category);
-            
-            if (categoryItems.length === 0) return null;
-            
-            return (
-              <div key={category} className="category-section">
-                <h3 className="category-title">{category}</h3>
-                <ul className="pantry-list">
-                  {categoryItems.map(it => (
-                    <li key={it.id} className="pantry-row">
-                      <div className="pantry-info">
-                        <strong>{it.name}</strong>
-                        <span className="muted">
-                          {it.quantity || 0} {it.unit || ""}
-                        </span>
-                      </div>
-                      <div className="row-actions">
-                        <button className="link" onClick={() => onEdit(it.id)}>Edit</button>
-                        <button className="link danger" onClick={() => onDelete(it.id)}>Delete</button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+      {/* Quick Select Section */}
+      <QuickSelect onItemSelect={handleQuickAdd} />
+
+      {/* Manual Add Section */}
+      <div className="manual-add-section">
+        <h3>Add Custom Item</h3>
+        <form onSubmit={handleManualAdd} className="add-item-form">
+          <div className="form-group">
+            <input
+              type="text"
+              placeholder="Item name"
+              value={newItem.name}
+              onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <input
+              type="number"
+              placeholder="Quantity"
+              value={newItem.quantity}
+              onChange={(e) => setNewItem({ ...newItem, quantity: e.target.value })}
+              min="0"
+              step="0.1"
+            />
+          </div>
+          <div className="form-group">
+            <select
+              value={newItem.unit}
+              onChange={(e) => setNewItem({ ...newItem, unit: e.target.value })}
+            >
+              <option value="">Select unit</option>
+              <option value="piece">piece</option>
+              <option value="cup">cup</option>
+              <option value="lb">lb</option>
+              <option value="oz">oz</option>
+              <option value="kg">kg</option>
+              <option value="g">g</option>
+              <option value="liter">liter</option>
+              <option value="ml">ml</option>
+              <option value="tsp">tsp</option>
+              <option value="tbsp">tbsp</option>
+            </select>
+          </div>
+          <button type="submit" className="btn btn-primary">
+            Add Item
+          </button>
+        </form>
+      </div>
+
+      {/* Pantry Items Display */}
+      <div className="pantry-items">
+        {pantryItems.length === 0 ? (
+          <div className="empty-state">
+            <h3>Your pantry is empty</h3>
+            <p>Start by adding some items using the quick select or manual add options above.</p>
+          </div>
+        ) : (
+          <div className="items-grid">
+            {pantryItems.map((item) => (
+              <div key={item.id} className="pantry-item-card">
+                <div className="item-info">
+                  <h4>{item.name}</h4>
+                  <p>
+                    {item.quantity} {item.unit}
+                  </p>
+                </div>
+                <button
+                  onClick={() => removePantryItem(item.id)}
+                  className="btn btn-danger btn-sm"
+                  aria-label={`Remove ${item.name}`}
+                >
+                  ×
+                </button>
               </div>
-            );
-          })}
-        </div>
-      )}
-    </section>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
-}
+};
+
+export default Pantry;
