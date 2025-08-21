@@ -86,8 +86,8 @@
 }
 
 .cell-empty:hover {
-  background-color: var(--bg-hover);
-  border-color: var(--border-hover);
+  background-color: var(--surface-hover);
+  border-color: var(--primary);
 }
 
 .cell-filled {
@@ -127,6 +127,29 @@
   justify-content: center;
   align-items: center;
   z-index: 1000;
+}
+
+/* Drag and Drop styles */
+.cell-filled.dragging {
+  opacity: 0.5;
+  transform: rotate(2deg);
+}
+
+.plan-cell.hover {
+  background-color: var(--surface-hover);
+  border: 2px solid var(--primary);
+  transform: scale(1.02);
+}
+
+.cell-drop-target {
+  background-color: var(--surface-hover);
+  border: 2px dashed var(--primary);
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
 .editor-card {

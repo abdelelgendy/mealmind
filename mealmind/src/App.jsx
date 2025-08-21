@@ -1,5 +1,7 @@
 import { AuthProvider } from "./contexts/AuthContext";
 import { PlanProvider } from "./plan/PlanContext";
+import { DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
 import Header from "./components/Header";
 import AppRoutes from "./routes/AppRoutes";
 
@@ -26,7 +28,9 @@ export default function App() {
   return (
     <AuthProvider>
       <PlanProvider>
-        <AppContent />
+        <DndProvider backend={HTML5Backend}>
+          <AppContent />
+        </DndProvider>
       </PlanProvider>
     </AuthProvider>
   );

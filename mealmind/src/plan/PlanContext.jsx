@@ -115,8 +115,6 @@ export function PlanProvider({ children }) {
       
     } catch (error) {
       console.error("Error moving recipe in local state:", error);
-      setSyncStatus("Error moving recipe");
-      setTimeout(() => setSyncStatus(""), 3000);
     }
   }
   

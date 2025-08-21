@@ -6,6 +6,7 @@ import { saveMealPlan, getMealPlan, deleteMealPlan, deleteAllMealPlans, getMealT
 import AddToPlanDialog from "../components/AddToPlanDialog";
 import MealTrackingSummary from "../components/MealTrackingSummary";
 import { useDrag, useDrop } from "react-dnd";
+import "../styles/plan-styles.css";
 
 // Define a type for drag and drop operations
 const ITEM_TYPE = "RECIPE";
@@ -521,8 +522,9 @@ function Cell({ day, slot, value, onEdit, onClear, trackingStatus, onTrackMeal }
 }
 
 function PlanCell({ day, slot, recipe, onEdit, onClear, trackingStatus, onTrackMeal }) {
-  const { moveRecipe } = usePlan();
+  const { moveRecipe, plan } = usePlan();
   const { user } = useAuth();
+  const [syncStatus, setSyncStatus] = useState("");
   
   // Function to handle recipe movement with database sync
   async function handleMoveRecipe(fromDay, fromSlot, toDay, toSlot) {
@@ -538,22 +540,18 @@ function PlanCell({ day, slot, recipe, onEdit, onClear, trackingStatus, onTrackM
       if (user) {
         setSyncStatus("Moving recipe...");
         
-        // Mark that we're performing an operation that will trigger a real-time update
-        isPerformingOperation.current = true;
-        
         // Remove from old slot
-        await deleteMealPlan(user.id, fromDay, fromSlot);
-        
-        // Add to new slot
-        await saveMealPlan(user.id, toDay, toSlot, movingRecipe);
-        
-        setSyncStatus("Recipe moved");
-        
-        // Reset the operation flag after a delay
-        setTimeout(() => {
-          isPerformingOperation.current = false;
-          setSyncStatus("");
-        }, 1000);
+        try {
+          await deleteMealPlan(user.id, fromDay, fromSlot);
+          // Add to new slot
+          await saveMealPlan(user.id, toDay, toSlot, movingRecipe);
+          setSyncStatus("Recipe moved");
+          setTimeout(() => setSyncStatus(""), 1000);
+        } catch (dbError) {
+          console.error("Database error moving recipe:", dbError);
+          setSyncStatus("Error moving recipe");
+          setTimeout(() => setSyncStatus(""), 3000);
+        }
       }
     } catch (error) {
       console.error("Error moving recipe:", error);
