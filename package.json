@@ -4,6 +4,7 @@
   "scripts": {
     "build": "cd mealmind && npm run build",
     "dev": "cd mealmind && npm run dev",
+    "preview": "cd mealmind && npm run preview",
     "install": "cd mealmind && npm install"
   },
   "dependencies": {

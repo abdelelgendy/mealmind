@@ -53,6 +53,9 @@ export async function testConnection() {
 
 // Sign up with email and password
 export async function signUp(email, password) {
+  if (!supabase) {
+    throw new Error('Supabase client not initialized. Please check your environment variables.');
+  }
   const { data, error } = await supabase.auth.signUp({ email, password });
   if (error) throw error;
   return data.user;
@@ -60,6 +63,9 @@ export async function signUp(email, password) {
 
 // Log in with email and password
 export async function logIn(email, password) {
+  if (!supabase) {
+    throw new Error('Supabase client not initialized. Please check your environment variables.');
+  }
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) throw error;
   return data.user;
@@ -67,12 +73,19 @@ export async function logIn(email, password) {
 
 // Log out
 export async function logOut() {
+  if (!supabase) {
+    throw new Error('Supabase client not initialized. Please check your environment variables.');
+  }
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
 }
 
 // Get current user session
 export async function getCurrentUser() {
+  if (!supabase) {
+    console.warn('Supabase client not initialized');
+    return null;
+  }
   try {
     const { data, error } = await supabase.auth.getUser();
     if (error) {
@@ -88,6 +101,10 @@ export async function getCurrentUser() {
 
 // Fetch user profile
 export async function getProfile(userId) {
+  if (!supabase) {
+    console.warn('Supabase client not initialized');
+    return null;
+  }
   const { data, error } = await supabase
     .from("profiles")
     .select("*")

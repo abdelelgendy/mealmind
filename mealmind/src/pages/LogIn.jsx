@@ -19,7 +19,12 @@ export default function LogIn() {
       setStatus("success");
       navigate("/"); // Redirect to home page after successful login
     } catch (err) {
-      setError(err.message);
+      console.error('Login error:', err);
+      if (err.message.includes('Supabase client not initialized')) {
+        setError("Database connection unavailable. Please try again later or contact support.");
+      } else {
+        setError(err.message);
+      }
       setStatus("idle");
     }
   };

@@ -42,7 +42,7 @@ const Pantry = () => {
             console.log('Supabase fetch failed, using local storage');
             setError('Using offline mode');
           }
-        } catch (supabaseError) {
+        } catch {
           // Supabase sync failed, continue with local storage
         }
       } else {

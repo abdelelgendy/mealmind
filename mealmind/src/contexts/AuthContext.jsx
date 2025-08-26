@@ -13,7 +13,6 @@ export function AuthProvider({ children }) {
   const [mealPlan, setMealPlan] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   // Fetch user's data (profile, pantry, meal plan, favorites)
   const fetchUserData = async (userId) => {
@@ -54,6 +53,25 @@ export function AuthProvider({ children }) {
     } catch (error) {
       console.error("Error logging out:", error);
     }
+  };
+
+  // Demo login when Supabase is not available
+  const demoLogin = () => {
+    const demoUser = {
+      id: 'demo-user-123',
+      email: 'demo@mealmind.com',
+      created_at: new Date().toISOString()
+    };
+    
+    setUser(demoUser);
+    setProfile(DEMO_PROFILE);
+    setPantry(DEMO_PANTRY_DATA);
+    setMealPlan([]);
+    setFavorites([]);
+    setLoading(false);
+    
+    console.log('Demo mode activated');
+    return demoUser;
   };
 
   useEffect(() => {
@@ -167,7 +185,7 @@ export function AuthProvider({ children }) {
         if (authListener && authListener.subscription) {
           authListener.subscription.unsubscribe();
         }
-      } catch (e) {
+      } catch {
         // no-op
       }
     };
@@ -187,9 +205,9 @@ export function AuthProvider({ children }) {
     favorites,
     setFavorites,
     loading,
-    error,
     isAuthenticated: !!user,
     logOut: handleLogOut,
+    demoLogin,
     refreshUserData: () => user && fetchUserData(user.id),
   };
 

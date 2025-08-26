@@ -20,7 +20,12 @@ export default function SignUp() {
       alert("Sign up successful! Please check your email for confirmation.");
       navigate("/login"); // Redirect to login page after signup
     } catch (err) {
-      setError(err.message);
+      console.error('Signup error:', err);
+      if (err.message.includes('Supabase client not initialized')) {
+        setError("Database connection unavailable. Please try again later or contact support.");
+      } else {
+        setError(err.message);
+      }
       setStatus("idle");
     }
   };
