@@ -24,22 +24,11 @@ function AppContent() {
  * Provides authentication and meal plan context to the entire app
  */
 export default function App() {
-  try {
-    return (
-      <AuthProvider>
-        <PlanProvider>
-          <AppContent />
-        </PlanProvider>
-      </AuthProvider>
-    );
-  } catch (error) {
-    console.error('App error:', error);
-    return (
-      <div style={{ padding: '20px', backgroundColor: '#f8d7da', color: '#721c24' }}>
-        <h1>Application Error</h1>
-        <p>Error: {error.message}</p>
-        <button onClick={() => window.location.reload()}>Reload Page</button>
-      </div>
-    );
-  }
+  return (
+    <AuthProvider>
+      <PlanProvider>
+        <AppContent />
+      </PlanProvider>
+    </AuthProvider>
+  );
 }

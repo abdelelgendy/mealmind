@@ -23,14 +23,11 @@ const QuickSelect = ({ onItemSelect, loading }) => {
   );
 
   const handleQuickAdd = (item) => {
-    console.log('QuickSelect handleQuickAdd called with:', item);
-    const itemToPass = {
+    onItemSelect({
       name: item.name,
       quantity: item.quantity,
       unit: item.unit
-    };
-    console.log('Calling onItemSelect with:', itemToPass);
-    onItemSelect(itemToPass);
+    });
   };
 
   return (

@@ -14,11 +14,6 @@ const Pantry = () => {
     fetchPantryItems();
   }, []);
 
-  // Debug effect to log state changes
-  useEffect(() => {
-    console.log('Pantry items state changed:', pantryItems.length, 'items');
-  }, [pantryItems]);
-
   const fetchPantryItems = async () => {
     try {
       setLoading(true);
@@ -48,8 +43,7 @@ const Pantry = () => {
             setError('Using offline mode');
           }
         } catch (supabaseError) {
-          console.log('Supabase connection failed, using local storage');
-          setError('Using offline mode');
+          // Supabase sync failed, continue with local storage
         }
       } else {
         setError('Using offline mode - no database connection');
@@ -63,7 +57,6 @@ const Pantry = () => {
   };
 
   const addPantryItem = async (item) => {
-    console.log('addPantryItem called with:', item);
     try {
       const itemToAdd = {
         name: item.name,
@@ -73,21 +66,10 @@ const Pantry = () => {
         id: Date.now() // Generate a local ID
       };
 
-      console.log('Item to add:', itemToAdd);
-
       // Always add to local state first for immediate UI update
       const updatedItems = [...pantryItems, itemToAdd];
-      console.log('Current pantryItems:', pantryItems);
-      console.log('New updatedItems:', updatedItems);
       setPantryItems(updatedItems);
       localStorage.setItem('pantryItems', JSON.stringify(updatedItems));
-      
-      console.log('Added to localStorage, pantry now has:', updatedItems.length, 'items');
-      
-      // Force a re-render by triggering a state change
-      setTimeout(() => {
-        console.log('Checking state after timeout:', pantryItems.length);
-      }, 100);
 
       // Try to sync with Supabase in the background (optional)
       if (supabase) {
@@ -106,7 +88,7 @@ const Pantry = () => {
             localStorage.setItem('pantryItems', JSON.stringify(itemsWithSupabaseId));
           }
         } catch (supabaseError) {
-          console.log('Supabase sync failed, using local storage only');
+          // Supabase sync failed, continue with local storage
         }
       }
     } catch (err) {
@@ -128,7 +110,6 @@ const Pantry = () => {
   };
 
   const handleQuickAdd = async (item) => {
-    console.log('QuickAdd called with:', item);
     await addPantryItem(item);
   };
 
@@ -151,7 +132,7 @@ const Pantry = () => {
             console.log('Supabase delete failed, using local storage only');
           }
         } catch (supabaseError) {
-          console.log('Supabase connection failed for delete operation');
+          // Supabase connection failed for delete operation
         }
       }
     } catch (err) {
@@ -227,31 +208,6 @@ const Pantry = () => {
             Add Item
           </button>
         </form>
-      </div>
-
-      {/* Debug Info */}
-      <div style={{ background: '#f0f0f0', padding: '10px', margin: '10px 0', borderRadius: '5px' }}>
-        <strong>Debug Info:</strong> 
-        <br />Items in state: {pantryItems.length}
-        <br />Items in localStorage: {localStorage.getItem('pantryItems') ? JSON.parse(localStorage.getItem('pantryItems')).length : 0}
-        <br />Error: {error || 'None'}
-        <br />Loading: {loading ? 'Yes' : 'No'}
-        <br />
-        <button onClick={() => {
-          console.log('Test button clicked');
-          setPantryItems([...pantryItems, { id: Date.now(), name: 'Test Item', quantity: 1, unit: 'piece' }]);
-        }}>
-          Test Add Item
-        </button>
-        <button onClick={() => {
-          console.log('Refresh from localStorage');
-          const localItems = localStorage.getItem('pantryItems');
-          if (localItems) {
-            setPantryItems(JSON.parse(localItems));
-          }
-        }}>
-          Refresh from localStorage
-        </button>
       </div>
 
       {/* Pantry Items Display */}

@@ -16,7 +16,7 @@ import { useAuth } from "../contexts/AuthContext.jsx";
  * Extracted from App.jsx for better organization and maintainability
  */
 export default function AppRoutes() {
-  const { user, profile, pantry, mealPlan } = useAuth();
+  const { user, profile, mealPlan } = useAuth();
   
   return (
     <Routes>
