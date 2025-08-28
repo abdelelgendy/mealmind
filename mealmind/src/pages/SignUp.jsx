@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { signUp } from "../lib/supabase";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function SignUp() {
   const [email, setEmail] = useState("");
@@ -8,25 +9,35 @@ export default function SignUp() {
   const [error, setError] = useState("");
   const [status, setStatus] = useState("idle");
   const navigate = useNavigate();
+  const { demoLogin } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setStatus("loading");
 
-    try {
-      await signUp(email, password);
+    const { data, error } = await signUp(email, password);
+    
+    if (error) {
+      console.error('Signup error:', error);
+      if (error.message.includes('Supabase client not initialized')) {
+        setError("Database connection unavailable. Using demo mode.");
+        // Use demo login to auto-login after "signup"
+        if (demoLogin) {
+          await demoLogin();
+          setStatus("success");
+          alert("Demo account created! You are now logged in.");
+          navigate("/");
+          return;
+        }
+      } else {
+        setError(error.message);
+      }
+      setStatus("idle");
+    } else {
       setStatus("success");
       alert("Sign up successful! Please check your email for confirmation.");
       navigate("/login"); // Redirect to login page after signup
-    } catch (err) {
-      console.error('Signup error:', err);
-      if (err.message.includes('Supabase client not initialized')) {
-        setError("Database connection unavailable. Please try again later or contact support.");
-      } else {
-        setError(err.message);
-      }
-      setStatus("idle");
     }
   };
 

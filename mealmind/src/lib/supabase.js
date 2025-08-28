@@ -54,21 +54,27 @@ export async function testConnection() {
 // Sign up with email and password
 export async function signUp(email, password) {
   if (!supabase) {
-    throw new Error('Supabase client not initialized. Please check your environment variables.');
+    return { data: null, error: { message: 'Supabase client not initialized. Please check your environment variables.' } };
   }
-  const { data, error } = await supabase.auth.signUp({ email, password });
-  if (error) throw error;
-  return data.user;
+  try {
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    return { data: data?.user || null, error };
+  } catch (err) {
+    return { data: null, error: { message: err.message } };
+  }
 }
 
 // Log in with email and password
 export async function logIn(email, password) {
   if (!supabase) {
-    throw new Error('Supabase client not initialized. Please check your environment variables.');
+    return { data: null, error: { message: 'Supabase client not initialized. Please check your environment variables.' } };
   }
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) throw error;
-  return data.user;
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    return { data: data?.user || null, error };
+  } catch (err) {
+    return { data: null, error: { message: err.message } };
+  }
 }
 
 // Log out

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { logIn } from "../lib/supabase";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function LogIn() {
   const [email, setEmail] = useState("");
@@ -8,24 +9,33 @@ export default function LogIn() {
   const [error, setError] = useState("");
   const [status, setStatus] = useState("idle");
   const navigate = useNavigate();
+  const { demoLogin } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setStatus("loading");
 
-    try {
-      await logIn(email, password);
-      setStatus("success");
-      navigate("/"); // Redirect to home page after successful login
-    } catch (err) {
-      console.error('Login error:', err);
-      if (err.message.includes('Supabase client not initialized')) {
-        setError("Database connection unavailable. Please try again later or contact support.");
+    const { data, error } = await logIn(email, password);
+    
+    if (error) {
+      console.error('Login error:', error);
+      if (error.message.includes('Supabase client not initialized')) {
+        setError("Database connection unavailable. Using demo mode.");
+        // Use demo login from context
+        if (demoLogin) {
+          await demoLogin();
+          setStatus("success");
+          navigate("/");
+          return;
+        }
       } else {
-        setError(err.message);
+        setError(error.message);
       }
       setStatus("idle");
+    } else {
+      setStatus("success");
+      navigate("/"); // Redirect to home page after successful login
     }
   };
 
