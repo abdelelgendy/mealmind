@@ -8,6 +8,27 @@ const Pantry = () => {
   const [newItem, setNewItem] = useState({ name: '', quantity: '', unit: '' });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isAdding, setIsAdding] = useState(false);
+  const [notification, setNotification] = useState(null);
+  const [recentlyAdded, setRecentlyAdded] = useState(new Set());
+
+  // Show notification helper
+  const showNotification = (message, type = 'success') => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 3000);
+  };
+
+  // Mark item as recently added
+  const markAsRecentlyAdded = (itemId) => {
+    setRecentlyAdded(prev => new Set([...prev, itemId]));
+    setTimeout(() => {
+      setRecentlyAdded(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(itemId);
+        return newSet;
+      });
+    }, 3000);
+  };
 
   // Load pantry items on component mount
   useEffect(() => {
@@ -57,6 +78,8 @@ const Pantry = () => {
   };
 
   const addPantryItem = async (item) => {
+    setIsAdding(true);
+    
     try {
       const itemToAdd = {
         name: item.name,
@@ -70,6 +93,12 @@ const Pantry = () => {
       const updatedItems = [...pantryItems, itemToAdd];
       setPantryItems(updatedItems);
       localStorage.setItem('pantryItems', JSON.stringify(updatedItems));
+      
+      // Show success notification
+      showNotification(`✅ Added ${item.name} to your pantry!`);
+      
+      // Mark as recently added for visual highlight
+      markAsRecentlyAdded(itemToAdd.id);
 
       // Try to sync with Supabase in the background (optional)
       if (supabase) {
@@ -86,14 +115,21 @@ const Pantry = () => {
             );
             setPantryItems(itemsWithSupabaseId);
             localStorage.setItem('pantryItems', JSON.stringify(itemsWithSupabaseId));
+          } else {
+            showNotification(`📱 ${item.name} saved locally (offline mode)`, 'info');
           }
-        } catch (supabaseError) {
+        } catch {
           // Supabase sync failed, continue with local storage
+          showNotification(`📱 ${item.name} saved locally (offline mode)`, 'info');
         }
+      } else {
+        showNotification(`📱 ${item.name} saved locally (offline mode)`, 'info');
       }
     } catch (err) {
       console.error('Error adding item:', err);
-      alert('Failed to add item. Please try again.');
+      showNotification(`❌ Failed to add ${item.name}. Please try again.`, 'error');
+    } finally {
+      setIsAdding(false);
     }
   };
 
@@ -154,6 +190,13 @@ const Pantry = () => {
 
   return (
     <div className="page-container">
+      {/* Notification Toast */}
+      {notification && (
+        <div className={`notification-toast ${notification.type}`}>
+          {notification.message}
+        </div>
+      )}
+
       <div className="page-header">
         <h1>My Pantry</h1>
         <p>Manage your ingredients and pantry items</p>
@@ -161,7 +204,7 @@ const Pantry = () => {
       </div>
 
       {/* Quick Select Section */}
-      <QuickSelect onItemSelect={handleQuickAdd} />
+      <QuickSelect onItemSelect={handleQuickAdd} loading={isAdding} />
 
       {/* Manual Add Section */}
       <div className="manual-add-section">
@@ -220,12 +263,18 @@ const Pantry = () => {
         ) : (
           <div className="items-grid">
             {pantryItems.map((item) => (
-              <div key={item.id} className="pantry-item-card">
+              <div 
+                key={item.id} 
+                className={`pantry-item-card ${recentlyAdded.has(item.id) ? 'recently-added' : ''}`}
+              >
                 <div className="item-info">
                   <h4>{item.name}</h4>
                   <p>
                     {item.quantity} {item.unit}
                   </p>
+                  {recentlyAdded.has(item.id) && (
+                    <span className="new-badge">NEW!</span>
+                  )}
                 </div>
                 <button
                   onClick={() => removePantryItem(item.id)}

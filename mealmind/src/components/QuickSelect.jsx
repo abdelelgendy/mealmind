@@ -5,6 +5,7 @@ import '../styles/quick-select.css';
 const QuickSelect = ({ onItemSelect, loading }) => {
   const [selectedCategory, setSelectedCategory] = useState('Most Common');
   const [searchTerm, setSearchTerm] = useState('');
+  const [clickedItems, setClickedItems] = useState(new Set());
 
   // Get all categories including "Most Common"
   const categories = ['Most Common', ...Object.keys(QUICK_SELECT_PANTRY_ITEMS)];
@@ -23,6 +24,19 @@ const QuickSelect = ({ onItemSelect, loading }) => {
   );
 
   const handleQuickAdd = (item) => {
+    // Add visual feedback for clicked item
+    const itemKey = `${item.name}-${selectedCategory}`;
+    setClickedItems(prev => new Set([...prev, itemKey]));
+    
+    // Remove the clicked effect after animation
+    setTimeout(() => {
+      setClickedItems(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(itemKey);
+        return newSet;
+      });
+    }, 1500);
+
     onItemSelect({
       name: item.name,
       quantity: item.quantity,
@@ -63,21 +77,27 @@ const QuickSelect = ({ onItemSelect, loading }) => {
         {filteredItems.length === 0 ? (
           <p className="muted">No items found matching "{searchTerm}"</p>
         ) : (
-          filteredItems.map((item, index) => (
-            <button
-              key={`${item.name}-${index}`}
-              className="quick-select-item"
-              onClick={() => handleQuickAdd(item)}
-              disabled={loading}
-              title={`Add ${item.quantity} ${item.unit} of ${item.name}`}
-            >
-              <span className="item-emoji">{item.emoji}</span>
-              <span className="item-name">{item.name}</span>
-              <span className="item-quantity">
-                {item.quantity} {item.unit}
-              </span>
-            </button>
-          ))
+          filteredItems.map((item, index) => {
+            const itemKey = `${item.name}-${selectedCategory}`;
+            const isClicked = clickedItems.has(itemKey);
+            
+            return (
+              <button
+                key={`${item.name}-${index}`}
+                className={`quick-select-item ${isClicked ? 'clicked' : ''} ${loading ? 'loading' : ''}`}
+                onClick={() => handleQuickAdd(item)}
+                disabled={loading}
+                title={`Add ${item.quantity} ${item.unit} of ${item.name}`}
+              >
+                <span className="item-emoji">{item.emoji}</span>
+                <span className="item-name">{item.name}</span>
+                <span className="item-quantity">
+                  {item.quantity} {item.unit}
+                </span>
+                {isClicked && <span className="added-checkmark">✓</span>}
+              </button>
+            );
+          })
         )}
       </div>
 

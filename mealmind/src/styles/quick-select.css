@@ -303,3 +303,181 @@
 [data-theme="dark"] .item-quantity {
   color: var(--text-secondary-dark);
 }
+
+/* Visual Feedback and Animations */
+.notification-toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  color: white;
+  font-weight: 500;
+  z-index: 1000;
+  animation: slideInRight 0.3s ease, fadeOut 0.5s ease 2.5s forwards;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  max-width: 350px;
+}
+
+.notification-toast.success {
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+}
+
+.notification-toast.error {
+  background: linear-gradient(135deg, #f44336, #d32f2f);
+}
+
+.notification-toast.info {
+  background: linear-gradient(135deg, #2196F3, #1976D2);
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+.quick-select-item.clicked {
+  background: var(--primary-color) !important;
+  color: white !important;
+  transform: scale(0.95);
+  animation: clickPulse 0.6s ease;
+  position: relative;
+}
+
+.quick-select-item.clicked .item-name,
+.quick-select-item.clicked .item-quantity {
+  color: white !important;
+}
+
+.quick-select-item.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+@keyframes clickPulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 var(--primary-color);
+  }
+  50% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 10px transparent;
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.added-checkmark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2rem;
+  color: white;
+  font-weight: bold;
+  animation: checkmarkPop 0.6s ease;
+}
+
+@keyframes checkmarkPop {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+.pantry-item-card.recently-added {
+  animation: newItemHighlight 3s ease;
+  position: relative;
+}
+
+@keyframes newItemHighlight {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 var(--primary-color);
+  }
+  10% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(76, 175, 80, 0.3);
+  }
+  20% {
+    transform: scale(1);
+    box-shadow: 0 0 0 20px transparent;
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.new-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  animation: badgePulse 2s ease infinite;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+@keyframes badgePulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+/* Enhanced pantry item cards */
+.pantry-item-card {
+  transition: all 0.3s ease, transform 0.2s ease;
+}
+
+.pantry-item-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Loading state for quick select */
+.quick-select.loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
