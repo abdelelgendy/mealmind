@@ -165,12 +165,6 @@ npm run build
 
 ---
 
-## 📄 License
-
-MIT License – see [LICENSE.md](LICENSE.md) for details.
-
----
-
 ## 🙏 Acknowledgments
 
 * [Spoonacular API](https://spoonacular.com/food-api)
