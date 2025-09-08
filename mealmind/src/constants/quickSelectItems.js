@@ -95,3 +95,47 @@ export const MOST_COMMON_PANTRY_ITEMS = [
   { name: "pasta", quantity: 1, unit: "box", emoji: "🍝", category: "Grains" },
   { name: "rice", quantity: 2, unit: "lbs", emoji: "🍚", category: "Grains" }
 ];
+
+// Quick select search options for recipes
+export const RECIPE_QUICK_SELECT_OPTIONS = {
+  "Popular Searches": [
+    { query: "chicken", emoji: "🐔", description: "Chicken recipes" },
+    { query: "pasta", emoji: "🍝", description: "Pasta dishes" },
+    { query: "salad", emoji: "🥗", description: "Fresh salads" },
+    { query: "soup", emoji: "🍲", description: "Comforting soups" },
+    { query: "pizza", emoji: "🍕", description: "Pizza recipes" },
+    { query: "stir fry", emoji: "🥘", description: "Quick stir-fries" },
+    { query: "sandwich", emoji: "🥪", description: "Sandwiches & wraps" },
+    { query: "breakfast", emoji: "🍳", description: "Breakfast ideas" }
+  ],
+  "Meal Types": [
+    { query: "quick dinner", emoji: "⚡", description: "30-minute meals" },
+    { query: "healthy lunch", emoji: "🥙", description: "Nutritious lunches" },
+    { query: "easy breakfast", emoji: "🌅", description: "Morning favorites" },
+    { query: "snacks", emoji: "🍿", description: "Healthy snacks" },
+    { query: "dessert", emoji: "🍰", description: "Sweet treats" },
+    { query: "appetizer", emoji: "🍤", description: "Party starters" },
+    { query: "one pot", emoji: "🍲", description: "One-pot wonders" },
+    { query: "meal prep", emoji: "📦", description: "Prep-friendly meals" }
+  ],
+  "Cuisines": [
+    { query: "italian", emoji: "🇮🇹", description: "Italian classics" },
+    { query: "mexican", emoji: "🌮", description: "Mexican flavors" },
+    { query: "asian", emoji: "🥢", description: "Asian cuisine" },
+    { query: "mediterranean", emoji: "🫒", description: "Mediterranean diet" },
+    { query: "indian", emoji: "🍛", description: "Indian spices" },
+    { query: "thai", emoji: "🌶️", description: "Thai favorites" },
+    { query: "greek", emoji: "🥙", description: "Greek dishes" },
+    { query: "american", emoji: "🇺🇸", description: "American comfort food" }
+  ],
+  "Dietary Preferences": [
+    { query: "vegetarian", emoji: "🥕", description: "Vegetarian recipes" },
+    { query: "vegan", emoji: "🌱", description: "Plant-based meals" },
+    { query: "gluten free", emoji: "🌾", description: "Gluten-free options" },
+    { query: "keto", emoji: "🥑", description: "Keto-friendly" },
+    { query: "low carb", emoji: "🥩", description: "Low-carb meals" },
+    { query: "high protein", emoji: "💪", description: "Protein-packed" },
+    { query: "dairy free", emoji: "🥥", description: "Dairy-free recipes" },
+    { query: "paleo", emoji: "🦴", description: "Paleo diet" }
+  ]
+};

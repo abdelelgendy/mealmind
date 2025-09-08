@@ -212,7 +212,6 @@ export function AuthProvider({ children }) {
     loading,
     isAuthenticated: !!user,
     logOut: handleLogOut,
-    demoLogin,
     refreshUserData: () => user && fetchUserData(user.id),
   };
 

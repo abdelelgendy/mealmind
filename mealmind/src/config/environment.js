@@ -3,12 +3,6 @@
  * This file validates environment variables and provides safe defaults
  */
 
-const requiredEnvVars = [
-  'VITE_SUPABASE_URL',
-  'VITE_SUPABASE_ANON_KEY',
-  'VITE_SPOONACULAR_API_KEY'
-];
-
 const config = {
   supabase: {
     url: import.meta.env.VITE_SUPABASE_URL || '',
@@ -21,8 +15,14 @@ const config = {
   isProduction: import.meta.env.PROD,
 };
 
-// Validation function
+// Validation function with better error handling
 export const validateEnvironment = () => {
+  const requiredEnvVars = [
+    'VITE_SUPABASE_URL',
+    'VITE_SUPABASE_ANON_KEY',
+    'VITE_SPOONACULAR_API_KEY'
+  ];
+  
   const missing = requiredEnvVars.filter(envVar => !import.meta.env[envVar]);
   
   // Debug logging in development

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import RecipeGrid from "../components/RecipeGrid";
 import SmartRecipeGrid from "../components/SmartRecipeGrid";
+import RecipeQuickSelect from "../components/RecipeQuickSelect";
 import { searchRecipes, saveRecipeToCache, getRecipeById } from "../lib/recipes";
 import { usePlan } from "../plan/PlanContext";
 import { useAuth } from "../contexts/AuthContext";
@@ -180,6 +181,12 @@ export default function Search() {
     }
   };
 
+  // Handle quick select from RecipeQuickSelect component
+  const handleQuickSearch = (searchTerm) => {
+    setQuery(searchTerm);
+    setDebounced(searchTerm);
+  };
+
   // Handle adding recipes to plan
   const addToPlan = async (recipe, day, slot) => {
     try {
@@ -270,6 +277,11 @@ export default function Search() {
         />
         <button className="btn" onClick={() => setDebounced(query)}>Search</button>
       </form>
+
+      <RecipeQuickSelect 
+        onQuickSearch={handleQuickSearch}
+        userProfile={profile}
+      />
 
       {user && (
         <div className="filter-controls">

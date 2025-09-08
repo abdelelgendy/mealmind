@@ -19,19 +19,20 @@ const FALLBACK_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJz
 const supabaseUrl = config.supabase.url || import.meta.env.VITE_SUPABASE_URL || FALLBACK_SUPABASE_URL;
 const supabaseKey = config.supabase.anonKey || import.meta.env.VITE_SUPABASE_ANON_KEY || FALLBACK_SUPABASE_KEY;
 
-// Create a safe Supabase client even if env vars are missing
-console.log('Supabase Environment Check:', {
-  configUrl: config.supabase.url,
-  envUrl: import.meta.env.VITE_SUPABASE_URL,
-  finalUrl: supabaseUrl,
-  hasUrl: !!supabaseUrl,
-  hasKey: !!supabaseKey,
-  isValidUrl: supabaseUrl ? isValidUrl(supabaseUrl) : false,
-  urlLength: supabaseUrl?.length,
-  keyLength: supabaseKey?.length
-});
+// Ensure we always have valid credentials
+let supabaseClient;
+try {
+  if (!supabaseUrl || !supabaseKey) {
+    console.warn('Missing Supabase credentials, using fallback values');
+  }
+  supabaseClient = createClient(supabaseUrl, supabaseKey);
+} catch (error) {
+  console.error('Failed to create Supabase client:', error);
+  // Create client with fallback values as last resort
+  supabaseClient = createClient(FALLBACK_SUPABASE_URL, FALLBACK_SUPABASE_KEY);
+}
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = supabaseClient;
 
 // Log initialization status (only in development)
 if (config.isDevelopment) {

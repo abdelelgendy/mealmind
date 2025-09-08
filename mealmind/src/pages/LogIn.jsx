@@ -9,7 +9,6 @@ export default function LogIn() {
   const [error, setError] = useState("");
   const [status, setStatus] = useState("idle");
   const navigate = useNavigate();
-  const { demoLogin } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
