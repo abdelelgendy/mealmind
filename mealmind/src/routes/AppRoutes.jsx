@@ -9,6 +9,7 @@ import Favorites from "../pages/Favorites.jsx";
 import SignUp from "../pages/SignUp.jsx";
 import LogIn from "../pages/LogIn.jsx";
 import ProtectedRoute from "../components/ProtectedRoute.jsx";
+import DebugPage from "../components/DebugPage.jsx";
 import { useAuth } from "../contexts/AuthContext.jsx";
 
 /**
@@ -62,6 +63,7 @@ export default function AppRoutes() {
           </ProtectedRoute>
         } 
       />
+      <Route path="/debug" element={<DebugPage />} />
       <Route path="/signup" element={<SignUp />} />
       <Route path="/login" element={<LogIn />} />
       <Route path="*" element={<Navigate to="/" />} />

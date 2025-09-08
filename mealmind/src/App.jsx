@@ -3,6 +3,12 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { PlanProvider } from "./plan/PlanContext";
 import Header from "./components/Header";
 import AppRoutes from "./routes/AppRoutes";
+import { testSupabaseConnection } from "./lib/testSupabase";
+
+// Test connection on app load
+if (import.meta.env.DEV) {
+  testSupabaseConnection();
+}
 
 /**
  * Main application content component 

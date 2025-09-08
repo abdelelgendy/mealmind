@@ -25,6 +25,15 @@ const config = {
 export const validateEnvironment = () => {
   const missing = requiredEnvVars.filter(envVar => !import.meta.env[envVar]);
   
+  // Debug logging in development
+  if (import.meta.env.DEV) {
+    console.log('Environment Variables Status:', {
+      VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL ? '✓ Set' : '✗ Missing',
+      VITE_SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY ? '✓ Set' : '✗ Missing',
+      VITE_SPOONACULAR_API_KEY: import.meta.env.VITE_SPOONACULAR_API_KEY ? '✓ Set' : '✗ Missing'
+    });
+  }
+  
   if (missing.length > 0) {
     console.warn('Missing environment variables:', missing);
     return false;

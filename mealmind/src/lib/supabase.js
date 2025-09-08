@@ -12,6 +12,15 @@ function isValidUrl(string) {
 }
 
 // Create a safe Supabase client even if env vars are missing
+console.log('Supabase Environment Check:', {
+  url: config.supabase.url,
+  hasUrl: !!config.supabase.url,
+  hasKey: !!config.supabase.anonKey,
+  isValidUrl: config.supabase.url ? isValidUrl(config.supabase.url) : false,
+  urlLength: config.supabase.url?.length,
+  keyLength: config.supabase.anonKey?.length
+});
+
 export const supabase = (
   config.supabase.url && 
   config.supabase.anonKey && 
