@@ -70,11 +70,16 @@ export function AuthProvider({ children }) {
     setFavorites([]);
     setLoading(false);
     
+    // More detailed alert about what's missing
+    const missingVars = [];
+    if (!import.meta.env.VITE_SUPABASE_URL) missingVars.push('VITE_SUPABASE_URL');
+    if (!import.meta.env.VITE_SUPABASE_ANON_KEY) missingVars.push('VITE_SUPABASE_ANON_KEY');
+    if (!import.meta.env.VITE_SPOONACULAR_API_KEY) missingVars.push('VITE_SPOONACULAR_API_KEY');
+    
+    alert(`Cannot connect to database. Demo mode active.\n\nMissing environment variables: ${missingVars.join(', ')}\n\nPlease check your .env file.`);
     console.log('Demo mode activated');
     return demoUser;
-  };
-
-  useEffect(() => {
+  };  useEffect(() => {
     // Check for the current user when the component mounts
     const checkUser = async () => {
       try {
