@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+ import { createClient } from "@supabase/supabase-js";
 import config from "../config/environment.js";
 
 // Validate URL format before creating client
@@ -11,21 +11,27 @@ function isValidUrl(string) {
   }
 }
 
+// Fallback values if environment variables are not loading
+const FALLBACK_SUPABASE_URL = 'https://xomllgblqmryqokgjxnr.supabase.co';
+const FALLBACK_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhvbWxsZ2JscW1yeXFva2dqeG5yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUxMjMwMzksImV4cCI6MjA3MDY5OTAzOX0.m2EiYqXklJyb012_iGjl0g7sJbFhWUOVuKApIm6i2Wk';
+
+// Use environment variables first, fallback to hardcoded values
+const supabaseUrl = config.supabase.url || import.meta.env.VITE_SUPABASE_URL || FALLBACK_SUPABASE_URL;
+const supabaseKey = config.supabase.anonKey || import.meta.env.VITE_SUPABASE_ANON_KEY || FALLBACK_SUPABASE_KEY;
+
 // Create a safe Supabase client even if env vars are missing
 console.log('Supabase Environment Check:', {
-  url: config.supabase.url,
-  hasUrl: !!config.supabase.url,
-  hasKey: !!config.supabase.anonKey,
-  isValidUrl: config.supabase.url ? isValidUrl(config.supabase.url) : false,
-  urlLength: config.supabase.url?.length,
-  keyLength: config.supabase.anonKey?.length
+  configUrl: config.supabase.url,
+  envUrl: import.meta.env.VITE_SUPABASE_URL,
+  finalUrl: supabaseUrl,
+  hasUrl: !!supabaseUrl,
+  hasKey: !!supabaseKey,
+  isValidUrl: supabaseUrl ? isValidUrl(supabaseUrl) : false,
+  urlLength: supabaseUrl?.length,
+  keyLength: supabaseKey?.length
 });
 
-export const supabase = (
-  config.supabase.url && 
-  config.supabase.anonKey && 
-  isValidUrl(config.supabase.url)
-) ? createClient(config.supabase.url, config.supabase.anonKey) : null;
+export const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Log initialization status (only in development)
 if (config.isDevelopment) {

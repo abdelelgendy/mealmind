@@ -4,6 +4,7 @@ import { PlanProvider } from "./plan/PlanContext";
 import Header from "./components/Header";
 import AppRoutes from "./routes/AppRoutes";
 import { testSupabaseConnection } from "./lib/testSupabase";
+import "./lib/test-supabase"; // Import to run the hardcoded test
 
 // Test connection on app load
 if (import.meta.env.DEV) {

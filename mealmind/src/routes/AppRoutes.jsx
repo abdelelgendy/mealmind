@@ -10,6 +10,7 @@ import SignUp from "../pages/SignUp.jsx";
 import LogIn from "../pages/LogIn.jsx";
 import ProtectedRoute from "../components/ProtectedRoute.jsx";
 import DebugPage from "../components/DebugPage.jsx";
+import EnvTest from "../components/EnvTest.jsx";
 import { useAuth } from "../contexts/AuthContext.jsx";
 
 /**
@@ -64,6 +65,7 @@ export default function AppRoutes() {
         } 
       />
       <Route path="/debug" element={<DebugPage />} />
+      <Route path="/envtest" element={<EnvTest />} />
       <Route path="/signup" element={<SignUp />} />
       <Route path="/login" element={<LogIn />} />
       <Route path="*" element={<Navigate to="/" />} />
