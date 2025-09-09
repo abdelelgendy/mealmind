@@ -5,7 +5,7 @@ import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 
 // Import optimized styles
-import './styles/base-optimized.css';
+import './styles/base.css';
 import './styles/recipe-styles.css';
 
 // Import components
