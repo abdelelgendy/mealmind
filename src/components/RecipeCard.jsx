@@ -5,7 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { addToFavorites, removeFromFavorites } from "../lib/supabase";
 import { formatDuration } from "../utils/helpers";
 
-function RecipeCard({ recipe, onAddToPlan, favorites = [], onFavoriteToggle }) {
+const RecipeCard = memo(function RecipeCard({ recipe, onAddToPlan, favorites = [], onFavoriteToggle }) {
   const { user } = useAuth();
   const [openPlan, setOpenPlan] = useState(false);
   const [openDetails, setOpenDetails] = useState(false);
@@ -13,149 +13,126 @@ function RecipeCard({ recipe, onAddToPlan, favorites = [], onFavoriteToggle }) {
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const [addingToPlan, setAddingToPlan] = useState(false);
 
   // Check if this recipe is in favorites
   useEffect(() => {
-    if (favorites && favorites.length) {
-      const found = favorites.some(fav => fav.recipe_id === recipe.id);
-      setIsFavorite(found);
-    }
+    const found = favorites?.some(fav => fav.recipe_id === recipe.id) || false;
+    setIsFavorite(found);
   }, [favorites, recipe.id]);
 
-  // Handle add to plan button click
-  const handleAddToPlan = () => {
-    setAddingToPlan(true);
-    setOpenPlan(true);
-    // Reset loading state when dialog closes
-    setTimeout(() => setAddingToPlan(false), 300);
-  };
+  const handleAddToPlan = () => setOpenPlan(true);
 
-  // Handle favorite toggle
   const handleFavoriteToggle = async () => {
-    if (!user) {
-      alert("Please log in to save favorites");
-      return;
-    }
+    if (!user || favoriteLoading) return;
     
     setFavoriteLoading(true);
     try {
       if (isFavorite) {
         await removeFromFavorites(user.id, recipe.id);
       } else {
-        await addToFavorites(user.id, recipe);
+        await addToFavorites(user.id, recipe.id, recipe);
       }
-      
-      setIsFavorite(!isFavorite);
       
       if (onFavoriteToggle) {
-        onFavoriteToggle(recipe, !isFavorite);
+        onFavoriteToggle(recipe, isFavorite);
       }
+      setIsFavorite(!isFavorite);
     } catch (error) {
-      console.error("Error toggling favorite:", error);
-      alert("Failed to update favorites");
+      console.error("Failed to toggle favorite:", error);
     } finally {
       setFavoriteLoading(false);
     }
   };
 
-  const handleImageLoad = () => setImageLoaded(true);
-  const handleImageError = () => setImageError(true);
+  const getImageSrc = () => {
+    if (imageError) return "/placeholder-recipe.jpg";
+    return recipe.image || recipe.image_url || "/placeholder-recipe.jpg";
+  };
+
+  const renderBadges = () => (
+    <div className="recipe-badges">
+      {recipe.vegetarian && <span className="badge badge--vegetarian">🌱 Vegetarian</span>}
+      {recipe.vegan && <span className="badge badge--vegan">🌿 Vegan</span>}
+      {recipe.glutenFree && <span className="badge badge--gluten-free">🌾 Gluten Free</span>}
+      {recipe.dairyFree && <span className="badge badge--dairy-free">🥛 Dairy Free</span>}
+    </div>
+  );
+
+  const renderStats = () => (
+    <div className="recipe-stats">
+      {recipe.readyInMinutes && (
+        <span className="stat">
+          <span className="stat-icon">⏱️</span>
+          {formatDuration(recipe.readyInMinutes)}
+        </span>
+      )}
+      {recipe.servings && (
+        <span className="stat">
+          <span className="stat-icon">👥</span>
+          {recipe.servings} servings
+        </span>
+      )}
+      {recipe.healthScore && (
+        <span className="stat">
+          <span className="stat-icon">❤️</span>
+          {recipe.healthScore}% healthy
+        </span>
+      )}
+    </div>
+  );
 
   return (
     <>
-      <article className="recipe-card card card--interactive fade-in">
-        <div className="recipe-card__image-container">
-          {!imageLoaded && !imageError && (
-            <div className="recipe-card__image-skeleton skeleton"></div>
-          )}
-          
-          {imageError ? (
-            <div className="recipe-card__image-placeholder">
-              <span className="recipe-card__image-icon">🍽️</span>
-              <span className="text-sm text-muted">No image available</span>
-            </div>
-          ) : (
-            <img
-              src={recipe.image || '/placeholder-recipe.jpg'}
-              alt={recipe.title}
-              className={`recipe-card__image ${imageLoaded ? 'loaded' : ''}`}
-              onLoad={handleImageLoad}
-              onError={handleImageError}
-              loading="lazy"
-            />
-          )}
+      <div className="recipe-card card">
+        <div className="recipe-image-container">
+          <img
+            src={getImageSrc()}
+            alt={recipe.title}
+            className={`recipe-image ${imageLoaded ? 'loaded' : ''}`}
+            loading="lazy"
+            onLoad={() => setImageLoaded(true)}
+            onError={() => setImageError(true)}
+          />
           
           <button
             onClick={handleFavoriteToggle}
-            disabled={favoriteLoading}
-            className={`recipe-card__favorite-btn ${isFavorite ? 'active' : ''}`}
+            disabled={favoriteLoading || !user}
+            className={`favorite-btn ${isFavorite ? 'active' : ''}`}
             aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
           >
-            {favoriteLoading ? (
-              <div className="loading-spinner loading-spinner--sm"></div>
-            ) : (
-              <span className="recipe-card__favorite-icon">
-                {isFavorite ? '❤️' : '🤍'}
-              </span>
-            )}
+            {favoriteLoading ? '⏳' : (isFavorite ? '❤️' : '🤍')}
           </button>
         </div>
 
-        <div className="card__body">
-          <h3 className="recipe-card__title card__title">{recipe.title}</h3>
+        <div className="recipe-content">
+          <h3 className="recipe-title">{recipe.title}</h3>
           
-          <div className="recipe-card__meta">
-            {recipe.readyInMinutes && (
-              <span className="recipe-card__time badge badge--primary">
-                ⏱️ {formatDuration(recipe.readyInMinutes)}
-              </span>
-            )}
-            
-            {recipe.servings && (
-              <span className="recipe-card__servings badge badge--info">
-                👥 {recipe.servings} servings
-              </span>
-            )}
-            
-            {recipe.healthScore && (
-              <span className="recipe-card__health badge badge--success">
-                💚 {recipe.healthScore}% healthy
-              </span>
-            )}
-          </div>
+          {renderBadges()}
+          {renderStats()}
 
-          {recipe.summary && (
-            <p className="recipe-card__summary card__description">
-              {recipe.summary.replace(/<[^>]*>/g, '').substring(0, 120)}...
-            </p>
-          )}
-        </div>
-
-        <div className="card__footer">
-          <div className="recipe-card__actions">
+          <div className="recipe-actions">
             <button
               onClick={() => setOpenDetails(true)}
-              className="btn btn--outline btn--sm"
+              className="btn btn--secondary"
             >
               View Details
             </button>
             
             <button
               onClick={handleAddToPlan}
-              className={`btn btn--primary btn--sm ${addingToPlan ? 'btn--loading' : ''}`}
-              disabled={addingToPlan}
+              className="btn"
+              disabled={!user}
             >
-              {addingToPlan ? '' : 'Add to Plan'}
+              Add to Plan
             </button>
           </div>
         </div>
-      </article>
+      </div>
 
       {openPlan && (
         <AddToPlanDialog
-          open={openPlan}
           recipe={recipe}
+          open={openPlan}
           onClose={() => setOpenPlan(false)}
           onAddToPlan={onAddToPlan}
         />
@@ -163,15 +140,16 @@ function RecipeCard({ recipe, onAddToPlan, favorites = [], onFavoriteToggle }) {
 
       {openDetails && (
         <RecipeDetailsDialog
-          open={openDetails}
           recipe={recipe}
+          open={openDetails}
           onClose={() => setOpenDetails(false)}
           onAddToPlan={handleAddToPlan}
-          recipeId={recipe.id}
+          favorites={favorites}
+          onFavoriteToggle={onFavoriteToggle}
         />
       )}
     </>
   );
-}
+});
 
-export default memo(RecipeCard);
+export default RecipeCard;
