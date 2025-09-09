@@ -1,6 +1,6 @@
 [build]
-  # Build from the mealmind subdirectory
-  base = "mealmind"
+  # Build from the root directory (files were moved from mealmind subdirectory)
+  base = "."
   publish = "dist"
   command = "npm run build"
 
