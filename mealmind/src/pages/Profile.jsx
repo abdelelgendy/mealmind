@@ -114,66 +114,106 @@ export default function Profile() {
   }
 
   return (
-    <section className="container">
-      <h1>Profile</h1>
+    <section className="container profile-page">
+      <div className="profile-header">
+        <h1>👤 My Profile</h1>
+        <p className="profile-subtitle">Customize your dietary preferences for personalized recommendations</p>
+      </div>
       
-      <div className="card">
-        <h2>Dietary Preferences</h2>
-        <p>Email: {user?.email}</p>
-        
-        {message.text && (
-          <div className={`message ${message.type}`}>
-            {message.text}
+      <div className="profile-card">
+        <div className="profile-info">
+          <div className="user-info">
+            <div className="user-avatar">
+              <span className="avatar-icon">👤</span>
+            </div>
+            <div className="user-details">
+              <h2>Dietary Preferences</h2>
+              <p className="user-email">📧 {user?.email}</p>
+            </div>
           </div>
-        )}
+          
+          {message.text && (
+            <div className={`message message-${message.type}`}>
+              <span className="message-icon">
+                {message.type === 'success' ? '✅' : message.type === 'error' ? '❌' : '⚠️'}
+              </span>
+              {message.text}
+            </div>
+          )}
+        </div>
         
         <form className="profile-form" onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="calories">Daily Calories</label>
-            <input
-              id="calories"
-              type="number"
-              min="500"
-              max="10000"
-              value={form.calories}
-              onChange={(e) => setForm({ ...form, calories: e.target.value })}
-              placeholder="Daily calorie target (e.g., 2000)"
-              required
-            />
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="diet">Diet Type</label>
-            <select
-              id="diet"
-              value={form.diet}
-              onChange={(e) => setForm({ ...form, diet: e.target.value })}
-            >
-              <option value="">Any</option>
-              <option value="balanced">Balanced</option>
-              <option value="high-protein">High Protein</option>
-              <option value="keto">Keto</option>
-              <option value="vegetarian">Vegetarian</option>
-              <option value="vegan">Vegan</option>
-            </select>
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="allergies">Allergies</label>
-            <input
-              id="allergies"
-              type="text"
-              value={form.allergies}
-              onChange={(e) => setForm({ ...form, allergies: e.target.value })}
-              placeholder="Comma-separated list (e.g., peanuts, shellfish)"
-            />
+          <div className="form-grid">
+            <div className="form-group">
+              <label htmlFor="calories" className="form-label">
+                <span className="label-icon">🎯</span>
+                Daily Calories
+              </label>
+              <input
+                id="calories"
+                type="number"
+                min="500"
+                max="10000"
+                value={form.calories}
+                onChange={(e) => setForm({ ...form, calories: e.target.value })}
+                placeholder="2000"
+                className="form-input"
+                required
+              />
+              <small className="form-help">Recommended: 1800-2500 calories</small>
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="diet" className="form-label">
+                <span className="label-icon">🥗</span>
+                Diet Type
+              </label>
+              <select
+                id="diet"
+                value={form.diet}
+                onChange={(e) => setForm({ ...form, diet: e.target.value })}
+                className="form-select"
+              >
+                <option value="">Any Diet</option>
+                <option value="balanced">🍽️ Balanced</option>
+                <option value="high-protein">🥩 High Protein</option>
+                <option value="keto">🥑 Keto</option>
+                <option value="vegetarian">🥬 Vegetarian</option>
+                <option value="vegan">🌱 Vegan</option>
+              </select>
+            </div>
+            
+            <div className="form-group form-group-full">
+              <label htmlFor="allergies" className="form-label">
+                <span className="label-icon">⚠️</span>
+                Allergies & Restrictions
+              </label>
+              <input
+                id="allergies"
+                type="text"
+                value={form.allergies}
+                onChange={(e) => setForm({ ...form, allergies: e.target.value })}
+                placeholder="e.g., peanuts, shellfish, dairy"
+                className="form-input"
+              />
+              <small className="form-help">Separate multiple allergies with commas</small>
+            </div>
           </div>
           
           <div className="form-actions">
-            <button type="submit" className="btn" disabled={loading}>
-              {loading ? "Updating..." : "Save Preferences"}
+            <button type="submit" className="btn btn-primary" disabled={loading}>
+              {loading ? (
+                <>
+                  <span className="btn-spinner"></span>
+                  Updating...
+                </>
+              ) : (
+                <>
+                  <span className="btn-icon">💾</span>
+                  Save Preferences
+                </>
+              )}
             </button>
-            {loading && <div className="loading-spinner"></div>}
           </div>
         </form>
       </div>

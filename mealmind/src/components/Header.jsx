@@ -13,7 +13,7 @@ const NAVIGATION_ITEMS = [
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, isOfflineMode, isOnline } = useAuth();
 
   const toggleMenu = useCallback(() => {
     setIsMenuOpen(prev => !prev);
@@ -39,6 +39,25 @@ export default function Header() {
         <NavLink to={ROUTES.HOME} className="logo-link">
           MealMind
         </NavLink>
+      </div>
+
+      {/* Network Status Indicator */}
+      <div className="network-status">
+        {isOfflineMode && (
+          <span className="status-badge offline" title="Offline Mode - Using Demo Data">
+            📱 Demo
+          </span>
+        )}
+        {!isOnline && !isOfflineMode && (
+          <span className="status-badge offline" title="No Internet Connection">
+            🔴 Offline
+          </span>
+        )}
+        {isOnline && !isOfflineMode && (
+          <span className="status-badge online" title="Connected">
+            🟢 Online
+          </span>
+        )}
       </div>
 
       <button

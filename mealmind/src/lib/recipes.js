@@ -1,11 +1,17 @@
 import { supabase } from "./supabase";
 import config from "../config/environment.js";
+import { MOCK_RECIPES, searchMockRecipes, simulateApiCall } from "./mockData.js";
 
 const API = 'https://api.spoonacular.com';
 const KEY = config.spoonacular.apiKey;
 
 // simple in-memory cache to avoid duplicate calls during the session
 const memory = new Map();
+
+// Network status detection
+function isOnline() {
+  return navigator.onLine;
+}
 
 function qs(params) {
   const u = new URLSearchParams();
@@ -15,10 +21,31 @@ function qs(params) {
   return u.toString();
 }
 
+// Fallback to mock data when offline or API unavailable
+async function getMockRecipes(query = '', filters = {}) {
+  console.log('🔄 Using offline mode - returning mock recipes');
+  const mockResults = searchMockRecipes(query, filters);
+  return simulateApiCall({
+    results: mockResults,
+    totalResults: mockResults.length
+  });
+}
+
+// Get mock recipe details for offline mode
+async function getMockRecipeDetails(id) {
+  console.log(`🔄 Using offline mode - returning mock recipe details for ID: ${id}`);
+  const recipe = MOCK_RECIPES.find(r => r.id === parseInt(id));
+  if (!recipe) {
+    throw new Error(`Recipe with ID ${id} not found in mock data`);
+  }
+  return simulateApiCall(recipe);
+}
+
 export async function searchRecipes({ query, maxCalories, diet, number = 20, signal }) {
-  if (!KEY || KEY === '') {
-    console.warn("Spoonacular API key not found - returning mock data");
-    return getMockRecipes();
+  // Check if offline or no API key available
+  if (!isOnline() || !KEY || KEY === '') {
+    console.warn("Offline or no API key - returning mock data");
+    return getMockRecipes(query, { maxCals: maxCalories, diet });
   }
   
   try {
@@ -54,14 +81,15 @@ export async function searchRecipes({ query, maxCalories, diet, number = 20, sig
     memory.set(url, results);
     return results;
   } catch (error) {
-    console.warn("Search failed, returning mock data:", error.message);
-    return getMockRecipes();
+    console.warn("Search failed, falling back to mock data:", error.message);
+    return getMockRecipes(query, { maxCals: maxCalories, diet });
   }
 }
 
 export async function getRecipeById(id, { signal } = {}) {
-  if (!KEY || KEY === '') {
-    console.warn("Spoonacular API key not found - returning mock recipe");
+  // Check if offline or no API key available
+  if (!isOnline() || !KEY || KEY === '') {
+    console.warn("Offline or no API key - returning mock recipe details");
     return getMockRecipeDetails(id);
   }
   
@@ -233,68 +261,4 @@ export async function removeRecipeFromCache(recipeId) {
   }
   
   return data;
-}
-
-// Mock data for development when API keys are not available
-function getMockRecipes() {
-  return [
-    {
-      id: 1,
-      title: "Mock Grilled Chicken",
-      image: "https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=400",
-      calories: 350,
-      readyInMinutes: 25,
-      ingredients: [
-        { name: "chicken breast", amount: 1, unit: "piece" },
-        { name: "olive oil", amount: 2, unit: "tbsp" },
-        { name: "salt", amount: 1, unit: "tsp" }
-      ]
-    },
-    {
-      id: 2,
-      title: "Mock Vegetable Salad",
-      image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400",
-      calories: 180,
-      readyInMinutes: 10,
-      ingredients: [
-        { name: "lettuce", amount: 2, unit: "cups" },
-        { name: "tomatoes", amount: 1, unit: "cup" },
-        { name: "cucumber", amount: 1, unit: "medium" }
-      ]
-    }
-  ];
-}
-
-function getMockRecipeDetails(id) {
-  return {
-    id: id || 1,
-    title: `Mock Recipe ${id || 1}`,
-    image: "https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=400",
-    calories: 350,
-    servings: 4,
-    readyInMinutes: 30,
-    prepTime: 15,
-    cookTime: 15,
-    sourceUrl: null,
-    sourceName: "MealMind Mock Data",
-    dishTypes: ["main course"],
-    diets: [],
-    nutrients: [
-      { name: "Calories", amount: 350, unit: "kcal" },
-      { name: "Protein", amount: 25, unit: "g" },
-      { name: "Carbohydrates", amount: 10, unit: "g" },
-      { name: "Fat", amount: 15, unit: "g" }
-    ],
-    ingredients: [
-      { name: "chicken breast", amount: 1, unit: "piece", originalString: "1 chicken breast" },
-      { name: "olive oil", amount: 2, unit: "tbsp", originalString: "2 tbsp olive oil" },
-      { name: "salt", amount: 1, unit: "tsp", originalString: "1 tsp salt" }
-    ],
-    instructions: [
-      "Season the chicken breast with salt",
-      "Heat olive oil in a pan over medium heat",
-      "Cook chicken for 6-7 minutes on each side",
-      "Let rest for 5 minutes before serving"
-    ]
-  };
 }

@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, memo } from "react";
 import AddToPlanDialog from "./AddToPlanDialog";
 import RecipeDetailsDialog from "./RecipeDetailsDialog";
 import { useAuth } from "../contexts/AuthContext";
 import { addToFavorites, removeFromFavorites } from "../lib/supabase";
 import { formatDuration } from "../utils/helpers";
 
-export default function RecipeCard({ recipe, onAddToPlan, favorites = [], onFavoriteToggle }) {
+function RecipeCard({ recipe, onAddToPlan, favorites = [], onFavoriteToggle }) {
   const { user } = useAuth();
   const [openPlan, setOpenPlan] = useState(false);
   const [openDetails, setOpenDetails] = useState(false);
@@ -173,3 +173,5 @@ export default function RecipeCard({ recipe, onAddToPlan, favorites = [], onFavo
     </>
   );
 }
+
+export default memo(RecipeCard);

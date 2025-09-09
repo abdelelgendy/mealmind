@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { RECIPE_QUICK_SELECT_OPTIONS } from '../constants/quickSelectItems';
 import { useAuth } from '../contexts/AuthContext';
 import '../styles/quick-select.css';
 
-const RecipeQuickSelect = ({ onQuickSearch, loading }) => {
+const RecipeQuickSelect = memo(({ onQuickSearch, loading }) => {
   const [selectedCategory, setSelectedCategory] = useState('Popular Searches');
   const [showProfileMatch, setShowProfileMatch] = useState(false);
   const { profile } = useAuth();
@@ -167,6 +167,6 @@ const RecipeQuickSelect = ({ onQuickSearch, loading }) => {
       )}
     </div>
   );
-};
+});
 
 export default RecipeQuickSelect;

@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { supabase, getCurrentUser, getProfile, getPantry, getMealPlan, logOut, getFavorites } from "../lib/supabase";
 import { DEMO_PANTRY_DATA, DEMO_PROFILE } from "../constants";
+import { MOCK_USER_PROFILE, MOCK_PANTRY_ITEMS, DEMO_MEAL_PLAN } from "../lib/mockData";
+import { useNetworkStatus } from "../hooks/useNetworkStatus";
 
 const AuthContext = createContext(null);
 
@@ -13,10 +15,30 @@ export function AuthProvider({ children }) {
   const [mealPlan, setMealPlan] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isOfflineMode, setIsOfflineMode] = useState(false);
+  const { isOnline } = useNetworkStatus();
+
+  // Demo/Offline mode functions
+  const enableOfflineMode = () => {
+    console.log("🔄 Enabling offline demo mode");
+    setIsOfflineMode(true);
+    setUser(MOCK_USER_PROFILE);
+    setProfile(MOCK_USER_PROFILE.preferences);
+    setPantry(MOCK_PANTRY_ITEMS);
+    setMealPlan(DEMO_MEAL_PLAN);
+    setFavorites([]);
+    setLoading(false);
+  };
 
   // Fetch user's data (profile, pantry, meal plan, favorites)
   const fetchUserData = async (userId) => {
     if (!userId || !supabase) return false;
+    
+    // If offline, don't try to fetch from server
+    if (!isOnline) {
+      console.log("Offline - skipping user data fetch");
+      return false;
+    }
     
     try {
       console.log("Fetching user data for:", userId);
@@ -35,6 +57,11 @@ export function AuthProvider({ children }) {
       return true;
     } catch (error) {
       console.error("Error fetching user data:", error);
+      // If we can't fetch user data and we're offline, enable offline mode
+      if (!isOnline) {
+        enableOfflineMode();
+        return true;
+      }
       return false;
     }
   };
@@ -86,16 +113,19 @@ export function AuthProvider({ children }) {
         console.log("AuthContext: Checking for current user");
         // Set a safety timeout to ensure loading state doesn't get stuck
         const safetyTimeout = setTimeout(() => {
-          console.log("Safety timeout triggered - forcing loading to complete");
-          setLoading(false);
+          console.log("Safety timeout triggered - enabling offline mode");
+          if (!user) {
+            enableOfflineMode();
+          } else {
+            setLoading(false);
+          }
         }, 7000); // 7 seconds max for loading
         
-        if (!supabase) {
-          console.log("Supabase not available, using demo data");
-          setPantry(DEMO_PANTRY_DATA);
-          setProfile(DEMO_PROFILE);
+        // If offline or no Supabase, enable offline mode immediately
+        if (!isOnline || !supabase) {
+          console.log(isOnline ? "Supabase not available" : "Offline detected", "- enabling offline mode");
           clearTimeout(safetyTimeout);
-          setLoading(false);
+          enableOfflineMode();
           return;
         }
         
@@ -119,10 +149,11 @@ export function AuthProvider({ children }) {
             // Continue even if we can't fetch all data
           }
         } else {
-          // No user logged in - use demo data for testing
-          console.log("No user logged in, using demo data for testing");
-          setPantry(DEMO_PANTRY_DATA);
-          setProfile(DEMO_PROFILE);
+          // No user logged in - enable offline mode for demo
+          console.log("No user logged in, enabling offline demo mode");
+          clearTimeout(safetyTimeout);
+          enableOfflineMode();
+          return;
         }
         
         clearTimeout(safetyTimeout);
@@ -130,7 +161,8 @@ export function AuthProvider({ children }) {
         console.log("AuthContext: Initial loading complete");
       } catch (error) {
         console.error("Error checking user:", error);
-        setLoading(false);
+        // Enable offline mode on error
+        enableOfflineMode();
       }
     };
     
@@ -211,6 +243,9 @@ export function AuthProvider({ children }) {
     setFavorites,
     loading,
     isAuthenticated: !!user,
+    isOfflineMode,
+    isOnline,
+    enableOfflineMode,
     logOut: handleLogOut,
     refreshUserData: () => user && fetchUserData(user.id),
   };
