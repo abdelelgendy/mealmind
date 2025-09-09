@@ -29,12 +29,18 @@ export default function Search() {
     enableCalorieFiltering: true
   });
   
-  // debounce
+  // debounce query changes, but trigger immediate search for diet/maxCals changes
   const [debounced, setDebounced] = useState(query);
   useEffect(() => {
     const t = setTimeout(() => setDebounced(query), 400);
     return () => clearTimeout(t);
   }, [query]);
+  
+  // Trigger search immediately when diet or maxCals change
+  const [searchTrigger, setSearchTrigger] = useState(0);
+  useEffect(() => {
+    setSearchTrigger(prev => prev + 1);
+  }, [diet, maxCals]);
 
   // Load featured recipes and apply user preferences on page load
   useEffect(() => {
@@ -73,6 +79,8 @@ export default function Search() {
   // abortable fetch when inputs change
   const abortRef = useRef();
   useEffect(() => {
+    console.log(`🔍 Search triggered: query="${debounced}", diet="${diet}", maxCals="${maxCals}"`);
+    
     // avoid empty searches
     if (!debounced && !diet && !maxCals) {
       setResults([]);
@@ -101,20 +109,20 @@ export default function Search() {
           signal: ctrl.signal
         });
 
-        // Apply client-side filtering based on user preferences
-        let filtered = data;
+        // Ensure data is always an array
+        let filtered = Array.isArray(data) ? data : [];
         
         // Filter by calories if provided
-        if (maxCals) {
+        if (maxCals && filtered.length > 0) {
           filtered = filtered.filter(r => !r.calories || r.calories <= Number(maxCals));
         }
         
         // Apply user preferences if they exist and are enabled
-        if (user && profile && profile.preferences && usePreferences) {
+        if (user && profile && profile.preferences && usePreferences && filtered.length > 0) {
           const userPrefs = profile.preferences;
           
           // Filter by allergies
-          if (userPrefs.allergies) {
+          if (userPrefs.allergies && Array.isArray(filtered)) {
             const allergies = userPrefs.allergies.split(',').map(a => a.trim().toLowerCase());
             
             if (allergies.length > 0) {
@@ -131,7 +139,7 @@ export default function Search() {
           }
           
           // Filter by max cooking time if specified
-          if (userPrefs.maxCookTime) {
+          if (userPrefs.maxCookTime && Array.isArray(filtered)) {
             const maxTime = Number(userPrefs.maxCookTime);
             filtered = filtered.filter(recipe => 
               !recipe.readyInMinutes || recipe.readyInMinutes <= maxTime || 
@@ -141,7 +149,7 @@ export default function Search() {
           
           // Filter by meal size preference (this would require recipe data to include portion/serving info)
           // For now we'll use a simple heuristic based on calories if available
-          if (userPrefs.mealSize) {
+          if (userPrefs.mealSize && Array.isArray(filtered)) {
             filtered = filtered.filter(recipe => {
               if (!recipe.calories) return true; // Keep recipes without calorie info
               
@@ -159,7 +167,7 @@ export default function Search() {
           }
         }
 
-        setResults(filtered);
+        setResults(Array.isArray(filtered) ? filtered : []);
         setStatus("success");
       } catch (err) {
         if (err.name === "AbortError") return;
@@ -170,7 +178,7 @@ export default function Search() {
     run();
 
     return () => ctrl.abort();
-  }, [debounced, diet, maxCals]);
+  }, [debounced, diet, maxCals, searchTrigger]);
 
   // Handle quick searches
   const quickSearch = (term, dietType = "") => {
@@ -410,12 +418,6 @@ export default function Search() {
             placeholder="e.g., 600"
             value={maxCals}
             onChange={(e)=>setMaxCals(e.target.value)}
-            onBlur={() => {
-              // Trigger search when user finishes typing calories
-              if (query || diet || maxCals) {
-                setDebounced(query);
-              }
-            }}
             disabled={user && profile && profile.preferences && profile.preferences.calories && usePreferences}
           />
         </label>

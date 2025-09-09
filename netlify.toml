@@ -1,14 +1,14 @@
 [build]
-  # Build from root directory
-  base = "."
-  publish = "mealmind/dist"
+  # Build from the mealmind subdirectory
+  base = "mealmind"
+  publish = "dist"
   command = "npm run build"
 
-# Secrets scanning configuration - disable completely for this project
+# Secrets scanning configuration
 [build.environment]
   NODE_VERSION = "18"
-  # Disable secrets scanning entirely since VITE_ vars are public by design
-  SECRETS_SCAN_ENABLED = "false"
+  # Disable secrets scanning for known safe files that contain examples
+  SECRETS_SCAN_OMIT_PATHS = ".env.local,.env.example,README.md,mealmind/README.md"
 
 [[redirects]]
   from = "/*"

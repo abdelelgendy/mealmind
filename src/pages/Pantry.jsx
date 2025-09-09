@@ -2,6 +2,62 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import QuickSelect from '../components/QuickSelect';
 import '../styles/quick-select.css';
+import '../styles/pantry-enhanced.css';
+
+// Emoji mapping for common ingredients
+const getItemEmoji = (itemName) => {
+  const name = itemName.toLowerCase();
+  const emojiMap = {
+    'onion': '🧅',
+    'tomato': '🍅',
+    'chicken': '🐔',
+    'beef': '🥩',
+    'eggs': '🥚',
+    'milk': '🥛',
+    'cheese': '🧀',
+    'bread': '🍞',
+    'rice': '🍚',
+    'pasta': '🍝',
+    'potato': '🥔',
+    'carrot': '🥕',
+    'garlic': '🧄',
+    'pepper': '🌶️',
+    'fish': '🐟',
+    'salmon': '🐟',
+    'shrimp': '🦐',
+    'apple': '🍎',
+    'banana': '🍌',
+    'orange': '🍊',
+    'lemon': '🍋',
+    'lime': '🟢',
+    'avocado': '🥑',
+    'spinach': '🥬',
+    'lettuce': '🥬',
+    'broccoli': '🥦',
+    'mushroom': '🍄',
+    'corn': '🌽',
+    'oil': '🫒',
+    'salt': '🧂',
+    'sugar': '🍯',
+    'flour': '🌾',
+    'butter': '🧈',
+    'wine': '🍷',
+    'herbs': '🌿',
+    'spices': '🌶️',
+    'nuts': '🥜',
+    'beans': '🫘',
+    'yogurt': '🥛'
+  };
+  
+  // Find a match in the emoji map
+  for (const [key, emoji] of Object.entries(emojiMap)) {
+    if (name.includes(key)) {
+      return emoji;
+    }
+  }
+  
+  return '🥫'; // Default emoji
+};
 
 const Pantry = () => {
   const [pantryItems, setPantryItems] = useState([]);
@@ -179,8 +235,8 @@ const Pantry = () => {
 
   if (loading) {
     return (
-      <div className="page-container">
-        <div className="loading-spinner">
+      <div className="pantry-page">
+        <div className="loading-state">
           <div className="spinner"></div>
           <p>Loading your pantry...</p>
         </div>
@@ -189,7 +245,7 @@ const Pantry = () => {
   }
 
   return (
-    <div className="page-container">
+    <div className="pantry-page">
       {/* Notification Toast */}
       {notification && (
         <div className={`notification-toast ${notification.type}`}>
@@ -235,7 +291,7 @@ const Pantry = () => {
               onChange={(e) => setNewItem({ ...newItem, unit: e.target.value })}
             >
               <option value="">Select unit</option>
-              <option value="piece">piece</option>
+              <option value="pcs">pcs</option>
               <option value="cup">cup</option>
               <option value="lb">lb</option>
               <option value="oz">oz</option>
@@ -247,14 +303,16 @@ const Pantry = () => {
               <option value="tbsp">tbsp</option>
             </select>
           </div>
-          <button type="submit" className="btn btn-primary">
-            Add Item
+          <button type="submit" className="btn btn-primary" disabled={isAdding}>
+            {isAdding ? 'Adding...' : 'Add Item'}
           </button>
         </form>
       </div>
 
       {/* Pantry Items Display */}
       <div className="pantry-items">
+        <h2>My Items ({pantryItems.length})</h2>
+        
         {pantryItems.length === 0 ? (
           <div className="empty-state">
             <h3>Your pantry is empty</h3>
@@ -268,18 +326,21 @@ const Pantry = () => {
                 className={`pantry-item-card ${recentlyAdded.has(item.id) ? 'recently-added' : ''}`}
               >
                 <div className="item-info">
-                  <h4>{item.name}</h4>
-                  <p>
+                  <h4 data-emoji={getItemEmoji(item.name)}>
+                    {item.name}
+                  </h4>
+                  <div className="quantity-display">
                     {item.quantity} {item.unit}
-                  </p>
+                  </div>
                   {recentlyAdded.has(item.id) && (
                     <span className="new-badge">NEW!</span>
                   )}
                 </div>
                 <button
                   onClick={() => removePantryItem(item.id)}
-                  className="btn btn-danger btn-sm"
+                  className="remove-btn"
                   aria-label={`Remove ${item.name}`}
+                  title={`Remove ${item.name}`}
                 >
                   ×
                 </button>

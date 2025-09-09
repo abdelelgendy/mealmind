@@ -57,9 +57,16 @@ export async function searchRecipes({ query, maxCalories, diet, number = 20, sig
       instructionsRequired: true
     };
     if (diet) params.diet = diet;                      // "ketogenic","vegan","vegetarian","paleo","pescetarian","gluten free","high protein","low carb","low fat","primal","whole30","dairy free"
-    if (maxCalories) params.maxCalories = maxCalories;  // spoonacular supports this on complex endpoints; for search we'll filter client-side too
+    
+    // Add nutrition information if we need calorie filtering
+    if (maxCalories) {
+      params.maxCalories = maxCalories;
+      params.addRecipeNutrition = true; // Required to get calorie information for filtering
+      console.log(`🔥 API search with maxCalories: ${maxCalories}`);
+    }
 
     const url = `${API}/recipes/complexSearch?${qs(params)}`;
+    console.log(`🌐 API URL: ${url}`);
 
     if (memory.has(url)) return memory.get(url);
 
@@ -69,6 +76,7 @@ export async function searchRecipes({ query, maxCalories, diet, number = 20, sig
       throw new Error(`Search failed (${res.status}): ${text}`);
     }
     const data = await res.json();
+    console.log(`📊 API returned ${data.results?.length || 0} recipes`);
 
     // normalize minimal fields for our UI
     const results = (data.results || []).map(r => ({
@@ -77,6 +85,19 @@ export async function searchRecipes({ query, maxCalories, diet, number = 20, sig
       image: r.image,
       calories: r.nutrition?.nutrients?.find(n => n.name === 'Calories')?.amount || null
     }));
+
+    // Log calorie information for debugging
+    if (maxCalories) {
+      const recipesWithCalories = results.filter(r => r.calories !== null);
+      console.log(`🍽️ Recipes with calorie data: ${recipesWithCalories.length}/${results.length}`);
+      if (recipesWithCalories.length > 0) {
+        const calorieRange = {
+          min: Math.min(...recipesWithCalories.map(r => r.calories)),
+          max: Math.max(...recipesWithCalories.map(r => r.calories))
+        };
+        console.log(`📈 Calorie range: ${calorieRange.min} - ${calorieRange.max} (max allowed: ${maxCalories})`);
+      }
+    }
 
     memory.set(url, results);
     return results;
