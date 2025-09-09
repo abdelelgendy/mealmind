@@ -6,9 +6,11 @@
 
 # Secrets scanning configuration
 [build.environment]
-  NODE_VERSION = "18"
+  NODE_VERSION = "20"
+  # These are public environment variables that are meant to be in the client bundle
+  SECRETS_SCAN_OMIT_KEYS = "VITE_SPOONACULAR_API_KEY,VITE_SUPABASE_ANON_KEY,VITE_SUPABASE_URL"
   # Disable secrets scanning for known safe files that contain examples
-  SECRETS_SCAN_OMIT_PATHS = ".env.local,.env.example,README.md,mealmind/README.md"
+  SECRETS_SCAN_OMIT_PATHS = ".env.local,.env.example,README.md"
 
 [[redirects]]
   from = "/*"
