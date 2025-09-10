@@ -8,6 +8,17 @@ const KEY = config.spoonacular.apiKey;
 // simple in-memory cache to avoid duplicate calls during the session
 const memory = new Map();
 
+// Track if we've already shown the API failure alert
+let hasShownAlert = false;
+
+// Simple alert for API failures
+function showApiFailureAlert() {
+  if (!hasShownAlert) {
+    alert('Sorry, the Spoonacular API is out of quota. Try again tomorrow. Demo mode is now active.');
+    hasShownAlert = true;
+  }
+}
+
 // Network status detection
 function isOnline() {
   return navigator.onLine;
@@ -25,10 +36,8 @@ function qs(params) {
 async function getMockRecipes(query = '', filters = {}) {
   console.log('🔄 Using offline mode - returning mock recipes');
   const mockResults = searchMockRecipes(query, filters);
-  return simulateApiCall({
-    results: mockResults,
-    totalResults: mockResults.length
-  });
+  // Return the array directly to match API format
+  return simulateApiCall(mockResults);
 }
 
 // Get mock recipe details for offline mode
@@ -73,6 +82,10 @@ export async function searchRecipes({ query, maxCalories, diet, number = 20, sig
     const res = await fetch(url, { signal });
     if (!res.ok) {
       const text = await res.text();
+      // Handle specific API errors
+      if (res.status === 402 || res.status === 401) {
+        showApiFailureAlert();
+      }
       throw new Error(`Search failed (${res.status}): ${text}`);
     }
     const data = await res.json();
@@ -123,6 +136,10 @@ export async function getRecipeById(id, { signal } = {}) {
     
     if (!res.ok) {
       const errorText = await res.text();
+      // Handle specific API errors
+      if (res.status === 402 || res.status === 401) {
+        showApiFailureAlert();
+      }
       throw new Error(`Recipe ${id} failed: ${res.status} - ${errorText || 'No error details'}`);
     }
     

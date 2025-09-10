@@ -3,6 +3,12 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { PlanProvider } from "./plan/PlanContext";
 import Header from "./components/Header";
 import AppRoutes from "./routes/AppRoutes";
+import EnvironmentDebug from "./components/EnvironmentDebug";
+
+// Import backend health check for development
+if (import.meta.env.DEV) {
+  import('./lib/backendHealthCheck.js');
+}
 
 /**
  * Main application content component 
@@ -22,6 +28,7 @@ function AppContent() {
 
   return (
     <div className="app-container">
+      <EnvironmentDebug />
       <Header />
       <main className="main-content container fade-in">
         <AppRoutes />
