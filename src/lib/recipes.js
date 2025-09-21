@@ -5,6 +5,65 @@ import { MOCK_RECIPES, searchMockRecipes, simulateApiCall } from "./mockData.js"
 const API = 'https://api.spoonacular.com';
 const KEY = config.spoonacular.apiKey;
 
+// Debug logging for Spoonacular API
+console.log('🍽️ Spoonacular API Debug:', {
+  hasApiKey: !!KEY,
+  keyLength: KEY ? KEY.length : 0,
+  keyPreview: KEY ? KEY.substring(0, 8) + '...' : 'MISSING',
+  apiUrl: API,
+  keyIsValidFormat: KEY ? /^[a-f0-9]{32}$/.test(KEY) : false
+});
+
+// Test API key validity
+async function testApiKey() {
+  if (!KEY || KEY === '') {
+    console.error('❌ No Spoonacular API key provided');
+    return false;
+  }
+  
+  try {
+    console.log('🧪 Testing Spoonacular API key...');
+    const testUrl = `${API}/recipes/random?apiKey=${KEY}&number=1`;
+    const response = await fetch(testUrl, {
+      headers: {
+        'x-api-key': KEY,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    console.log(`🧪 API Key test response:`, {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok
+    });
+    
+    if (response.status === 401) {
+      console.error('🔑 API Key is invalid or unauthorized');
+      return false;
+    } else if (response.status === 402) {
+      console.error('💳 API Key quota exceeded');
+      return false;
+    } else if (response.status === 403) {
+      console.error('🚫 API Key is forbidden or suspended');
+      return false;
+    } else if (response.ok) {
+      console.log('✅ API Key is valid and working');
+      return true;
+    } else {
+      console.warn(`⚠️ Unexpected API response: ${response.status}`);
+      return false;
+    }
+  } catch (error) {
+    console.error('❌ API Key test failed:', error.message);
+    return false;
+  }
+}
+
+// Run API key test on module load (only in development)
+if (config.isDevelopment && KEY) {
+  testApiKey();
+}
+
 // simple in-memory cache to avoid duplicate calls during the session
 const memory = new Map();
 
@@ -53,7 +112,11 @@ async function getMockRecipeDetails(id) {
 export async function searchRecipes({ query, maxCalories, diet, number = 20, signal }) {
   // Check if offline or no API key available
   if (!isOnline() || !KEY || KEY === '') {
-    console.warn("Offline or no API key - returning mock data");
+    console.warn("🚫 Spoonacular API unavailable:", {
+      online: isOnline(),
+      hasKey: !!KEY,
+      reason: !isOnline() ? 'Offline' : 'No API key'
+    });
     return getMockRecipes(query, { maxCals: maxCalories, diet });
   }
   
@@ -75,21 +138,61 @@ export async function searchRecipes({ query, maxCalories, diet, number = 20, sig
     }
 
     const url = `${API}/recipes/complexSearch?${qs(params)}`;
-    console.log(`🌐 API URL: ${url}`);
+    console.log(`🌐 Spoonacular API URL: ${url.replace(KEY, 'API_KEY_HIDDEN')}`);
 
-    if (memory.has(url)) return memory.get(url);
+    if (memory.has(url)) {
+      console.log('📦 Returning cached result');
+      return memory.get(url);
+    }
 
-    const res = await fetch(url, { signal });
+    console.log('🚀 Making Spoonacular API request...');
+    const res = await fetch(url, { 
+      signal,
+      headers: {
+        'x-api-key': KEY, // Alternative auth method as per documentation
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    console.log(`📡 Spoonacular API response:`, {
+      status: res.status,
+      statusText: res.statusText,
+      ok: res.ok,
+      headers: {
+        'content-type': res.headers.get('content-type'),
+        'x-ratelimit-remaining': res.headers.get('x-ratelimit-remaining'),
+        'x-quota-used': res.headers.get('x-quota-used')
+      }
+    });
+    
     if (!res.ok) {
       const text = await res.text();
+      console.error(`❌ Spoonacular API Error:`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: text
+      });
+      
       // Handle specific API errors
-      if (res.status === 402 || res.status === 401) {
+      if (res.status === 402) {
+        console.error('💳 Spoonacular API: Payment required (quota exceeded)');
         showApiFailureAlert();
+        return getMockRecipes(query, { maxCals: maxCalories, diet });
+      } else if (res.status === 401) {
+        console.error('🔑 Spoonacular API: Unauthorized (invalid API key)');
+        showApiFailureAlert();
+        return getMockRecipes(query, { maxCals: maxCalories, diet });
+      } else if (res.status === 403) {
+        console.error('🚫 Spoonacular API: Forbidden (API key may be invalid or suspended)');
+        showApiFailureAlert();
+        return getMockRecipes(query, { maxCals: maxCalories, diet });
       }
-      throw new Error(`Search failed (${res.status}): ${text}`);
+      
+      throw new Error(`Spoonacular API failed (${res.status}): ${text}`);
     }
+    
     const data = await res.json();
-    console.log(`📊 API returned ${data.results?.length || 0} recipes`);
+    console.log(`📊 Spoonacular API returned ${data.results?.length || 0} recipes`);
 
     // normalize minimal fields for our UI
     const results = (data.results || []).map(r => ({
@@ -115,7 +218,24 @@ export async function searchRecipes({ query, maxCalories, diet, number = 20, sig
     memory.set(url, results);
     return results;
   } catch (error) {
-    console.warn("Search failed, falling back to mock data:", error.message);
+    console.error("🚨 Spoonacular API search failed:", {
+      error: error.message,
+      stack: error.stack,
+      query,
+      maxCalories,
+      diet
+    });
+    
+    // Check if it's a network error vs API error
+    if (error.name === 'AbortError') {
+      console.warn("🛑 Request was aborted");
+      throw error; // Don't fallback for aborted requests
+    } else if (error.message.includes('fetch')) {
+      console.warn("🌐 Network error - falling back to mock data");
+    } else {
+      console.warn("⚠️ API error - falling back to mock data");
+    }
+    
     return getMockRecipes(query, { maxCals: maxCalories, diet });
   }
 }
@@ -131,15 +251,45 @@ export async function getRecipeById(id, { signal } = {}) {
   if (memory.has(url)) return memory.get(url);
   
   try {
-    console.log(`Fetching recipe details for ID: ${id}`);
-    const res = await fetch(url, { signal });
+    console.log(`🔍 Fetching recipe details for ID: ${id}`);
+    const res = await fetch(url, { 
+      signal,
+      headers: {
+        'x-api-key': KEY,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    console.log(`📡 Recipe API response:`, {
+      status: res.status,
+      statusText: res.statusText,
+      ok: res.ok
+    });
     
     if (!res.ok) {
       const errorText = await res.text();
+      console.error(`❌ Recipe API Error:`, {
+        id,
+        status: res.status,
+        statusText: res.statusText,
+        response: errorText
+      });
+      
       // Handle specific API errors
-      if (res.status === 402 || res.status === 401) {
+      if (res.status === 402) {
+        console.error('💳 Spoonacular API: Payment required (quota exceeded)');
         showApiFailureAlert();
+        return getMockRecipeDetails(id);
+      } else if (res.status === 401) {
+        console.error('🔑 Spoonacular API: Unauthorized (invalid API key)');
+        showApiFailureAlert();
+        return getMockRecipeDetails(id);
+      } else if (res.status === 403) {
+        console.error('🚫 Spoonacular API: Forbidden');
+        showApiFailureAlert();
+        return getMockRecipeDetails(id);
       }
+      
       throw new Error(`Recipe ${id} failed: ${res.status} - ${errorText || 'No error details'}`);
     }
     
