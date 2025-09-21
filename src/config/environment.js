@@ -8,6 +8,7 @@ console.log('🔍 Environment Debug:', {
   VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
   VITE_SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY ? '***PRESENT***' : 'MISSING',
   VITE_SPOONACULAR_API_KEY: import.meta.env.VITE_SPOONACULAR_API_KEY ? '***PRESENT***' : 'MISSING',
+  VITE_SPOONACULAR_RAW: import.meta.env.VITE_SPOONACULAR_API_KEY, // Show actual value for debugging
   VITE_NODE_ENV: import.meta.env.VITE_NODE_ENV,
   DEV: import.meta.env.DEV,
   PROD: import.meta.env.PROD,
