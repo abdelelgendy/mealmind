@@ -3,6 +3,27 @@
  * This file validates environment variables and provides safe defaults
  */
 
+// Debug logging for environment variables (including build time)
+console.log('🔍 Environment Debug:', {
+  VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
+  VITE_SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY ? '***PRESENT***' : 'MISSING',
+  VITE_SPOONACULAR_API_KEY: import.meta.env.VITE_SPOONACULAR_API_KEY ? '***PRESENT***' : 'MISSING',
+  VITE_NODE_ENV: import.meta.env.VITE_NODE_ENV,
+  DEV: import.meta.env.DEV,
+  PROD: import.meta.env.PROD,
+  MODE: import.meta.env.MODE,
+  ALL_ENV_VARS: Object.keys(import.meta.env).filter(key => key.startsWith('VITE_'))
+});
+
+// Build-time environment check
+if (import.meta.env.PROD) {
+  console.warn('🚀 PRODUCTION BUILD - Environment check:', {
+    supabaseConfigured: !!(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY),
+    supabaseUrl: import.meta.env.VITE_SUPABASE_URL ? 'SET' : 'MISSING',
+    supabaseKey: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'SET' : 'MISSING'
+  });
+}
+
 const config = {
   supabase: {
     url: import.meta.env.VITE_SUPABASE_URL || '',

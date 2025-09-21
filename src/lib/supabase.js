@@ -1,6 +1,16 @@
  import { createClient } from "@supabase/supabase-js";
 import config from "../config/environment.js";
 
+// Debug logging for Supabase initialization
+console.log('🔧 Supabase Debug:', {
+  hasUrl: !!config.supabase.url,
+  hasKey: !!config.supabase.anonKey,
+  urlLength: config.supabase.url.length,
+  keyLength: config.supabase.anonKey.length,
+  urlPreview: config.supabase.url.substring(0, 30) + '...',
+  keyPreview: config.supabase.anonKey.substring(0, 20) + '...'
+});
+
 // Validate URL format before creating client
 function isValidUrl(string) {
   try {
