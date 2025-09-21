@@ -2,6 +2,8 @@
 
 **MealMind** is a modern, intelligent meal planning application built with **React, Vite, and Supabase**. It provides a complete solution for recipe discovery, meal planning, pantry management, and dietary tracking with a beautiful, responsive interface that works seamlessly online and offline.
 
+*Last updated: September 2025 - Enhanced Spoonacular API integration*
+
 ---
 
 ## 🌟 Key Features
